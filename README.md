@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.0.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.0.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -57,4 +57,17 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.0.1 | Handy: Suchfeld in eigener Zeile, Kopfzeile passt wieder aufs Display; Mengen wie 1/2 werden als ½ angezeigt; Karten-Schriften korrigiert |
 | 1.0.0 | Erste Version: Rezeptverwaltung, Kochmodus, Timer, Einkaufsliste, Web-Import, Sicherung, Dashboard-Karte, Sensor |
+
+## So sieht es aus
+
+| Übersicht | Rezept |
+|---|---|
+| ![Übersicht](docs/screenshots/1_list.png) | ![Rezept](docs/screenshots/2_detail.png) |
+| **Kochmodus** | **Handy** |
+| ![Kochmodus](docs/screenshots/4_cook.png) | ![Handy](docs/screenshots/6_mobile.png) |
+
+Dashboard-Karte:
+
+![Karte](docs/screenshots/9_card.png)

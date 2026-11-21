@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.0.0";
+const KB_VERSION = "1.0.1";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -490,10 +490,12 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 @media (max-width: 640px) {
   .brand .count, .btn .lbl { display: none; }
   .top .btn { padding: 0 12px; }
-  .search { width: auto; flex: 1; }
+  .search { width: auto; flex: 1; min-width: 0; padding: 0 12px; }
   .top { gap: 6px; }
   .brand h1 { font-size: 22px; }
-  .top.list .brand { display: none; }
+  .top.list { flex-wrap: wrap; row-gap: 8px; }
+  .top.list .search { order: 10; flex: 1 0 100%; margin-left: 8px; }
+  .top.list .brand .count { display: none; }
   main, .detail, .editor { padding-left: 14px; padding-right: 14px; }
   .grid { grid-template-columns: 1fr 1fr; gap: 22px 12px; }
   .card h3 { font-size: 16px; }
