@@ -1,0 +1,14 @@
+{
+  "domain": "kochbuch",
+  "name": "Kochbuch",
+  "codeowners": ["@domiundergroun"],
+  "config_flow": true,
+  "dependencies": ["http", "frontend", "panel_custom", "websocket_api"],
+  "documentation": "https://github.com/domiundergroun/Kochrezepte",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/domiundergroun/Kochrezepte/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.0.0"
+}

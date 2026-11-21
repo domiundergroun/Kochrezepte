@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kochbuch einrichten",
+        "description": "Richtet dein Kochbuch ein. Danach findest du es in der Seitenleiste unter „Kochbuch“."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Das Kochbuch ist bereits eingerichtet."
+    }
+  },
+  "entity": {}
+}

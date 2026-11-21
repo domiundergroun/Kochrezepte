@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Cookbook",
+        "description": "Sets up your cookbook. Afterwards you will find it in the sidebar as “Kochbuch”."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "The cookbook is already set up."
+    }
+  },
+  "entity": {}
+}
