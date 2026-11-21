@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.1.0";
+const KB_VERSION = "1.2.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -271,6 +271,17 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .empty h2 { font-size: 26px; margin-bottom: 8px; }
 .empty p { color: var(--kb-ink-soft); margin: 0 0 22px; }
 .empty .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; font-weight: 700; }
+.crumbs button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; height: 44px; padding: 0 12px; border-radius: 999px; font-family: var(--kb-display); font-size: 20px; font-weight: 800; color: var(--kb-ink); }
+.crumbs button:hover { background: var(--kb-herb-soft); }
+.crumbs button ha-icon { color: var(--kb-herb); }
+.crumbs .crumb-cat { font-family: var(--kb-body); font-size: 17px; font-weight: 700; color: var(--kb-ink-soft); }
+.crumbs .crumb-cat .title-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.crumbs .sep { color: var(--kb-ink-soft); --mdc-icon-size: 20px; display: inline-flex; }
+.crumbs .here { display: inline-flex; align-items: center; padding: 0 8px; color: var(--kb-ink-soft); font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumbs .here .title-dot { width: 10px; height: 10px; margin-right: 8px; vertical-align: 0; flex: none; }
+.cat-title { font-size: clamp(34px, 5vw, 52px); font-weight: 800; margin: 18px 0 0; padding-bottom: 10px; border-bottom: 4px solid var(--c); display: inline-block; }
 
 /* Startseite */
 .title-dot { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 10px; vertical-align: 2px; }
@@ -571,6 +582,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
   .f.s3, .f.s2 { grid-column: span 1; }
   .f { grid-column: span 2; }
   .irow { grid-template-columns: 24px 62px 74px 1fr 36px; gap: 6px; }
+  .crumbs button { font-size: 18px; padding: 0 8px; }
+  .crumbs .sep, .crumbs .here, .crumbs .crumb-cat { display: none; }
+  .cat-title { font-size: 30px; margin-top: 8px; }
   .savebar { padding-left: 14px; padding-right: 14px; }
   .savebar .btn { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 10px; }
   .savebar .btn ha-icon { display: none; }
@@ -743,7 +757,7 @@ class KochbuchPanel extends HTMLElement {
   }
 
   _newDraft(base) {
-    const cat = this.view.name === "list" && this._cat(this.filter) ? this.filter : "";
+    const cat = this.view.name === "list" && this._cat(this.filter) ? this.filter : ((this.settings.categories || [])[0]?.id || "");
     return {
       title: "", description: "", category: cat, tags: [], image: "",
       servings: this.settings.default_servings || 4, servings_unit: "Portionen",
@@ -838,7 +852,7 @@ class KochbuchPanel extends HTMLElement {
 
   _renderHome() {
     const n = this.recipes.length;
-    const header = this._header("list", "", "Kochbuch", `${n} ${n === 1 ? "Rezept" : "Rezepte"}`);
+    const header = this._header("list", "", "Kochbuch", "");
     if (this.search.trim()) {
       return `${header}<main>${this._toolbar()}<section class="grid" id="grid">${this._renderCards()}</section></main>`;
     }
@@ -854,45 +868,31 @@ class KochbuchPanel extends HTMLElement {
         <span class="ct-count">${list.length ? `${list.length} ${list.length === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</span>
       </button>`;
     }).join("");
-    const favs = this.recipes.filter((r) => r.favorite).length;
     const none = this.recipes.filter((r) => !r.category || !this._cat(r.category)).length;
-    const mini = [
-      `<button class="mini-tile" data-action="cat" data-id="all"><ha-icon icon="mdi:book-open-variant"></ha-icon><span><b>Alle Rezepte</b><small>${n}</small></span></button>`,
-      `<button class="mini-tile mini-fav" data-action="cat" data-id="fav"><ha-icon icon="mdi:heart"></ha-icon><span><b>Favoriten</b><small>${favs}</small></span></button>`,
-      none ? `<button class="mini-tile" data-action="cat" data-id="none"><ha-icon icon="mdi:tag-off-outline"></ha-icon><span><b>Ohne Kategorie</b><small>${none}</small></span></button>` : "",
-    ].join("");
-    const newest = this.recipes.slice().sort((a, b) => (b.created || "").localeCompare(a.created || "")).slice(0, 4);
-    return `${header}<main class="home">
-      ${n ? "" : `<div class="welcome"><div><h2>Willkommen im Kochbuch</h2><p>Wählt eine Kategorie und tragt das erste Rezept ein – oder holt eins per Link aus dem Internet.</p></div>
-        <div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button><button class="btn" data-action="import"><ha-icon icon="mdi:web-plus"></ha-icon>Aus dem Internet holen</button></div></div>`}
-      <section class="shelf" aria-label="Kategorien">${tiles}
-        <button class="cat-tile add" data-action="settings"><ha-icon icon="mdi:plus"></ha-icon><span class="ct-name">Kategorie</span><span class="ct-count">in den Einstellungen anlegen</span></button>
-      </section>
-      <div class="minis">${mini}</div>
-      ${newest.length ? `<h2 class="sec-title">Neu im Kochbuch</h2><section class="grid">${this._renderCards(newest)}</section>` : ""}
-    </main>`;
+    const noneTile = none ? `<button class="cat-tile" style="--c:#6B7A72" data-action="cat" data-id="none">
+        <ha-icon class="bg" icon="mdi:tag-off-outline"></ha-icon>
+        <span class="ct-name">Ohne Kategorie</span><span class="ct-count">${none} ${none === 1 ? "Rezept" : "Rezepte"}</span></button>` : "";
+    const body = tiles || noneTile
+      ? `<section class="shelf" aria-label="Kategorien">${tiles}${noneTile}</section>`
+      : `<div class="empty"><div class="plate"><ha-icon icon="mdi:shape-outline"></ha-icon></div><h2>Noch keine Kategorien</h2><p>Legt in den Einstellungen Kategorien an, z. B. Nudeln oder Suppen.</p><div class="row"><button class="btn primary" data-action="settings"><ha-icon icon="mdi:cog-outline"></ha-icon>Zu den Einstellungen</button></div></div>`;
+    return `${header}<main class="home">${body}</main>`;
+  }
+
+  _crumbs(extra) {
+    return `<nav class="crumbs" aria-label="Pfad"><button data-action="home"><ha-icon icon="mdi:home-outline"></ha-icon><span>Kochbuch</span></button>${extra || ""}</nav>`;
   }
 
   _renderList() {
-    const cats = this.settings.categories || [];
-    const count = (id) => this.recipes.filter((r) => r.category === id).length;
-    const favs = this.recipes.filter((r) => r.favorite).length;
-    const none = this.recipes.filter((r) => !r.category || !this._cat(r.category)).length;
-    const tab = (id, label, color, n, icon) =>
-      `<button class="tab ${this.filter === id ? "on" : ""}" data-action="filter" data-id="${esc(this._slug(id))}" style="--c:${color}">${icon || `<span class="dot"></span>`}${label} <span class="n">${n}</span></button>`;
-    const tabs = [
-      tab("all", "Alle", "var(--kb-ink)", this.recipes.length, " "),
-      tab("fav", "Favoriten", "var(--kb-tomato)", favs, `<ha-icon icon="mdi:heart" style="--mdc-icon-size:16px;color:var(--kb-tomato)"></ha-icon>`),
-      ...cats.map((c) => tab(c.id, esc(c.name), esc(c.color), count(c.id))),
-      none || this.filter === "none" ? tab("none", "Ohne Kategorie", "var(--kb-ink-soft)", none) : "",
-    ].join("");
     const c = this._cat(this.filter);
-    const lead = `<button class="icon-btn" data-action="home" aria-label="Zur Startseite"><ha-icon icon="mdi:arrow-left"></ha-icon></button>`;
-    const title = c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}` : esc(this._filterName(this.filter));
-    const header = this._header("list", lead, title, "");
+    const crumbs = this._crumbs(`<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><span class="here">${c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>` : ""}${esc(this._filterName(this.filter))}</span>`);
+    const header = this._top("list", `${crumbs}<div class="spacer"></div>
+      <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="In ${esc(this._filterName(this.filter))} suchen" value="${esc(this.search)}" aria-label="Suchen"></label>
+      <button class="icon-btn" data-action="import" title="Aus dem Internet importieren" aria-label="Aus dem Internet importieren"><ha-icon icon="mdi:web-plus"></ha-icon></button>
+      <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
+      <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
     const empty = !this._filtered().length && !this.search.trim();
     return `${header}<main>
-      <nav class="tabs" aria-label="Kategorien">${tabs}</nav>
+      <h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${esc(this._filterName(this.filter))}</h1>
       ${empty ? "" : this._toolbar()}
       <section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>
     </main>`;
@@ -955,7 +955,7 @@ class KochbuchPanel extends HTMLElement {
     const cookedN = (r.cooked || []).length;
 
     const header = this._top("", `
-      <button class="icon-btn" data-action="back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button>
+      ${this._crumbs(c ? `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(c.id)}"><span class="title-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</button>` : "")}
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
       <button class="icon-btn" data-action="print" aria-label="Drucken" title="Drucken"><ha-icon icon="mdi:printer-outline"></ha-icon></button>
@@ -1144,7 +1144,7 @@ class KochbuchPanel extends HTMLElement {
         <div class="fields" style="margin-top:18px">
           <div class="f"><label for="f-title">Name des Rezepts</label><input id="f-title" class="title-input" data-f="title" value="${esc(d.title)}" placeholder="z. B. Omas Apfelkuchen"></div>
           <div class="f"><label for="f-desc">Kurzbeschreibung</label><textarea id="f-desc" data-f="description" rows="2" placeholder="Worauf darf man sich freuen?">${esc(d.description)}</textarea></div>
-          <div class="f s3"><label for="f-cat">Kategorie</label><select id="f-cat" data-f="category"><option value="">Ohne Kategorie</option>${cats.map((c) => `<option value="${esc(c.id)}" ${d.category === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+          <div class="f s3"><label for="f-cat">Kategorie</label><select id="f-cat" data-f="category">${d.category && this._cat(d.category) ? "" : `<option value="" selected disabled>Bitte wählen</option>`}${cats.map((c) => `<option value="${esc(c.id)}" ${d.category === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
           <div class="f s3"><label>Schwierigkeit</label><div class="diff">${[1, 2, 3].map((n) => `<button data-action="diff" data-n="${n}" class="${d.difficulty === n ? "on" : ""}">${DIFFICULTY[n]}</button>`).join("")}</div></div>
           <div class="f s2"><label for="f-prep">Vorbereitung (Min)</label><input id="f-prep" type="number" min="0" data-f="prep_time" value="${d.prep_time || ""}" placeholder="0"></div>
           <div class="f s2"><label for="f-cook">Koch-/Backzeit (Min)</label><input id="f-cook" type="number" min="0" data-f="cook_time" value="${d.cook_time || ""}" placeholder="0"></div>
@@ -1213,6 +1213,7 @@ class KochbuchPanel extends HTMLElement {
     this._readDraft();
     const d = this.draft;
     if (!d.title.trim()) { this._showToast("Bitte gebt dem Rezept einen Namen.", true); this._focusSel = "#f-title"; this.render(); return; }
+    if ((this.settings.categories || []).length && !this._cat(d.category)) { this._showToast("Bitte wählt eine Kategorie.", true); this._focusSel = "#f-cat"; this.render(); return; }
     const recipe = { ...d };
     delete recipe._key;
     recipe.ingredients = d.ingredients
@@ -1259,7 +1260,8 @@ class KochbuchPanel extends HTMLElement {
     const todos = this._todoEntities();
     const name = (e) => this._hass.states[e]?.attributes?.friendly_name || e;
     const total = (s.categories || []).length;
-    const used = (id) => this.recipes.filter((r) => r.category === id).length;
+    const moved = (cat) => { let c = cat; for (let i = 0; i < 10 && s.moves && c in s.moves; i++) c = s.moves[c]; return c; };
+    const used = (id) => this.recipes.filter((r) => moved(r.category) === id).length;
     const cats = (s.categories || []).map((c, i) => `<div class="cat-row ${this._flashCat === i ? "flash" : ""}" data-cat="${i}">
         <input type="color" data-c="color" value="${esc(c.color)}" aria-label="Farbe von ${esc(c.name)}">
         <span class="prev" style="background:${esc(c.color)}"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>
@@ -1272,7 +1274,7 @@ class KochbuchPanel extends HTMLElement {
         </span>
       </div>`).join("");
     this._flashCat = null;
-    return `${this._top("", `<button class="icon-btn" data-action="back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button><div class="brand"><h1>Einstellungen</h1></div>`)}
+    return `${this._top("", `${this._crumbs(`<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><span class="here">Einstellungen</span>`)}`)}
     <div class="editor">
       <section class="panel"><h2>Kategorien</h2>
         <p class="muted" style="margin:-6px 0 14px">So erscheinen die Kategorien auf der Startseite. Mit den Pfeilen ändert ihr die Reihenfolge.</p>
@@ -1320,7 +1322,9 @@ class KochbuchPanel extends HTMLElement {
       inner = `<h2>Rezept löschen?</h2><p>„${esc(r?.title)}“ wird mit Foto endgültig aus dem Kochbuch entfernt.</p>
         <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="delete-confirm">Löschen</button></div>`;
     } else if (d.type === "cat-del") {
-      inner = `<h2>„${esc(d.name)}“ löschen?</h2><p>${d.n === 1 ? "Ein Rezept gehört" : `${d.n} Rezepte gehören`} zu dieser Kategorie. Die Rezepte bleiben erhalten und erscheinen danach unter „Ohne Kategorie“. Gelöscht wird erst beim Speichern der Einstellungen.</p>
+      const others = this.settingsDraft.categories.filter((_, i) => i !== d.idx && _.name.trim());
+      inner = `<h2>„${esc(d.name)}“ löschen?</h2><p>${d.n === 1 ? "Ein Rezept gehört" : `${d.n} Rezepte gehören`} zu dieser Kategorie. Wohin sollen ${d.n === 1 ? "es" : "sie"} verschoben werden? Gelöscht wird erst beim Speichern der Einstellungen.</p>
+        <select class="inp" id="move-target">${others.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}<option value="">Ohne Kategorie lassen</option></select>
         <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="cat-del-confirm">Kategorie löschen</button></div>`;
     } else if (d.type === "import") {
       inner = `<h2>Rezept aus dem Internet</h2><p>Fügt die Adresse eines Rezepts ein, z. B. von Chefkoch, Lecker oder einem Foodblog. Ihr könnt alles vor dem Speichern noch anpassen.</p>
@@ -1530,17 +1534,29 @@ class KochbuchPanel extends HTMLElement {
       case "cat-del": {
         this._readSettings();
         const c = this.settingsDraft.categories[idx];
-        const n = this.recipes.filter((r) => r.category === c.id).length;
+        const sd = this.settingsDraft;
+        const n = this.recipes.filter((r) => { let x = r.category; for (let i = 0; i < 10 && sd.moves && x in sd.moves; i++) x = sd.moves[x]; return x === c.id; }).length;
         if (n) { this.dialog = { type: "cat-del", idx, name: c.name, n }; this.render(); }
         else { this.settingsDraft.categories.splice(idx, 1); this.render(); }
         break;
       }
-      case "cat-del-confirm": this.settingsDraft.categories.splice(this.dialog.idx, 1); this.dialog = null; this.render(); break;
+      case "cat-del-confirm": {
+        const sd = this.settingsDraft;
+        const gone = sd.categories[this.dialog.idx].id;
+        const target = this.shadowRoot.querySelector("#move-target")?.value || "";
+        sd.moves = sd.moves || {};
+        for (const k of Object.keys(sd.moves)) if (sd.moves[k] === gone) sd.moves[k] = target;
+        sd.moves[gone] = target;
+        sd.categories.splice(this.dialog.idx, 1);
+        this.dialog = null; this.render();
+        break;
+      }
       case "settings-save": {
         this._readSettings();
         this.settingsDraft.categories = this.settingsDraft.categories.filter((c) => c.name.trim());
         try {
           this.settings = await this._hass.callWS({ type: "kochbuch/settings", settings: this.settingsDraft });
+          if (this.settingsDraft.moves) this._setData(await this._hass.callWS({ type: "kochbuch/data" }));
           this._showToast("Einstellungen gespeichert");
           this._go("", true);
         } catch (err) { this._showToast(`Fehler: ${err.message || err}`, true); }

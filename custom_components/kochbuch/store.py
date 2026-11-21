@@ -220,6 +220,15 @@ class KochbuchStore:
                     }
                 )
             self.settings["categories"] = cats
+        moves = settings.get("moves")
+        if isinstance(moves, dict):
+            valid = {c["id"] for c in self.settings.get("categories", [])}
+            for recipe in self.recipes.values():
+                old = recipe.get("category")
+                if old in moves:
+                    target = _str(moves[old], 60)
+                    recipe["category"] = target if target in valid else ""
+                    recipe["updated"] = _now()
         await self._async_save()
         return self.settings
 
