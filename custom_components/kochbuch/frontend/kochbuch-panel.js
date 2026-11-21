@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.0.1";
+const KB_VERSION = "1.1.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -72,7 +72,7 @@ function fmtMinutes(min) {
 }
 
 const DIFFICULTY = { 1: "Einfach", 2: "Mittel", 3: "Anspruchsvoll" };
-const ICONS = ["mdi:food", "mdi:egg-fried", "mdi:food-variant", "mdi:pot-steam", "mdi:leaf", "mdi:silverware-fork-knife", "mdi:pasta", "mdi:rice", "mdi:bowl-mix", "mdi:ice-cream", "mdi:cupcake", "mdi:food-croissant", "mdi:glass-cocktail", "mdi:fish", "mdi:food-drumstick", "mdi:food-steak", "mdi:pizza", "mdi:hamburger", "mdi:noodles", "mdi:carrot", "mdi:fruit-cherries", "mdi:bread-slice", "mdi:cake-variant", "mdi:cookie", "mdi:coffee", "mdi:grill", "mdi:sprout", "mdi:chili-mild", "mdi:baguette", "mdi:muffin"];
+const ICONS = ["mdi:food", "mdi:egg-fried", "mdi:food-variant", "mdi:pot-steam", "mdi:leaf", "mdi:silverware-fork-knife", "mdi:pasta", "mdi:rice", "mdi:bowl-mix", "mdi:ice-cream", "mdi:cupcake", "mdi:food-croissant", "mdi:glass-cocktail", "mdi:fish", "mdi:food-drumstick", "mdi:food-steak", "mdi:pizza", "mdi:hamburger", "mdi:noodles", "mdi:carrot", "mdi:fruit-cherries", "mdi:bread-slice", "mdi:cake-variant", "mdi:cookie", "mdi:coffee", "mdi:grill", "mdi:sprout", "mdi:chili-mild", "mdi:baguette", "mdi:muffin", "mdi:food-turkey", "mdi:pot-mix", "mdi:pot", "mdi:bowl-mix-outline", "mdi:food-apple", "mdi:fish", "mdi:egg", "mdi:cheese", "mdi:mushroom", "mdi:pumpkin", "mdi:bowl"];
 
 function resizeImage(file, max = 1600, quality = 0.85) {
   return new Promise((resolve, reject) => {
@@ -272,6 +272,56 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .empty p { color: var(--kb-ink-soft); margin: 0 0 22px; }
 .empty .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
+/* Startseite */
+.title-dot { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 10px; vertical-align: 2px; }
+.welcome {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--kb-herb); color: #fff; border-radius: 20px; padding: 22px 26px; margin: 14px 0 6px;
+}
+:host([dark]) .welcome { color: #0E1A15; }
+.welcome h2 { font-size: 24px; font-weight: 800; }
+.welcome p { margin: 4px 0 0; opacity: .9; max-width: 56ch; }
+.welcome .row { display: flex; gap: 10px; flex-wrap: wrap; }
+.welcome .btn { border-color: transparent; }
+.welcome .btn.primary { background: var(--kb-saffron); color: var(--kb-saffron-ink); }
+.shelf {
+  display: grid; gap: 16px; padding-top: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.cat-tile {
+  position: relative; overflow: hidden; text-align: left; border: 0; cursor: pointer;
+  min-height: 168px; padding: 20px 20px 18px; border-radius: 6px 22px 22px 22px;
+  background: var(--c); color: #fff; display: flex; flex-direction: column; justify-content: flex-end;
+  box-shadow: var(--kb-shadow); transition: transform .18s ease;
+}
+.cat-tile:hover { transform: translateY(-3px); }
+.cat-tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(0,0,0,.12)); pointer-events: none; }
+.cat-tile .bg { position: absolute; right: -18px; bottom: -22px; --mdc-icon-size: 150px; color: rgba(255,255,255,.2); transform: rotate(-12deg); }
+.cat-tile .ct-name { position: relative; z-index: 1; font-family: var(--kb-display); font-weight: 800; font-size: 30px; line-height: 1.05; letter-spacing: -0.01em; }
+.cat-tile .ct-count { position: relative; z-index: 1; font-size: 15px; opacity: .9; margin-top: 4px; }
+.cat-tile .thumbs { position: absolute; top: 16px; right: 16px; display: flex; z-index: 1; }
+.cat-tile .thumbs img { width: 50px; height: 50px; border-radius: 999px; object-fit: cover; border: 3px solid var(--c); margin-left: -14px; box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+.cat-tile.add {
+  background: transparent; color: var(--kb-ink-soft); border: 2px dashed var(--kb-line); box-shadow: none;
+  align-items: center; justify-content: center; text-align: center;
+}
+.cat-tile.add::after { display: none; }
+.cat-tile.add ha-icon { --mdc-icon-size: 34px; margin-bottom: 6px; }
+.cat-tile.add .ct-name { font-size: 20px; color: var(--kb-ink); }
+.cat-tile.add .ct-count { font-size: 14px; }
+.cat-tile.add:hover { border-color: var(--kb-herb); color: var(--kb-herb); }
+.minis { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.mini-tile {
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px 12px 14px; border-radius: 16px; border: 1.5px solid var(--kb-line);
+  background: var(--kb-surface); text-align: left;
+}
+.mini-tile:hover { border-color: var(--kb-herb); }
+.mini-tile ha-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--kb-herb-soft); color: var(--kb-herb); align-items: center; justify-content: center; }
+.mini-tile.mini-fav ha-icon { color: var(--kb-tomato); background: color-mix(in srgb, var(--kb-tomato) 14%, transparent); }
+.mini-tile b { display: block; font-size: 16px; }
+.mini-tile small { color: var(--kb-ink-soft); font-size: 14px; }
+.sec-title { font-size: 24px; font-weight: 800; margin: 38px 0 0; }
+
 /* Detailansicht */
 .detail { max-width: 1120px; margin: 0 auto; padding: 0 20px 90px; }
 .hero {
@@ -412,9 +462,20 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
   border-top: 1px solid var(--kb-line);
 }
 .savebar .left { margin-right: auto; }
+.lbl-m { display: none; }
 
 /* Einstellungen */
-.cat-row { display: grid; grid-template-columns: 44px 1fr 170px 44px; gap: 8px; align-items: center; }
+.cat-row { display: grid; grid-template-columns: 44px 44px 1fr 190px auto; gap: 8px; align-items: center; padding: 8px; border-radius: 14px; background: var(--kb-paper); }
+.cat-row .prev { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; }
+.cat-row .prev ha-icon { --mdc-icon-size: 24px; }
+.cat-row .name-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cat-row .name-cell small { color: var(--kb-ink-soft); font-size: 12px; padding-left: 4px; }
+.cat-row .inp { background: var(--kb-surface); }
+.cat-row .order { display: flex; gap: 4px; }
+.cat-row .order .icon-btn { border: 1.5px solid var(--kb-line); background: var(--kb-surface); }
+.cat-row .order .icon-btn[disabled] { opacity: .35; pointer-events: none; }
+.cat-row.flash { animation: flash .6s ease; }
+@keyframes flash { 0% { background: color-mix(in srgb, var(--kb-saffron) 35%, var(--kb-paper)); } }
 .cat-row input[type=color] { width: 44px; height: 44px; padding: 3px; border-radius: 12px; border: 1.5px solid var(--kb-line); background: var(--kb-paper); }
 .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .muted { color: var(--kb-ink-soft); font-size: 14px; }
@@ -510,8 +571,21 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
   .f.s3, .f.s2 { grid-column: span 1; }
   .f { grid-column: span 2; }
   .irow { grid-template-columns: 24px 62px 74px 1fr 36px; gap: 6px; }
-  .cat-row { grid-template-columns: 44px 1fr 44px; }
-  .cat-row select { grid-column: 2 / 3; }
+  .savebar { padding-left: 14px; padding-right: 14px; }
+  .savebar .btn { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 10px; }
+  .savebar .btn ha-icon { display: none; }
+  .savebar .lbl-m { display: inline; }
+  .cat-row { grid-template-columns: 44px 44px 1fr; }
+  .cat-row select { grid-column: 1 / -1; }
+  .cat-row .order { grid-column: 1 / -1; justify-content: flex-end; }
+  .shelf { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cat-tile { min-height: 132px; padding: 16px; }
+  .cat-tile .ct-name { font-size: 22px; }
+  .cat-tile .ct-count { font-size: 13px; }
+  .cat-tile .bg { --mdc-icon-size: 110px; }
+  .cat-tile .thumbs img { width: 38px; height: 38px; }
+  .minis { display: grid; grid-template-columns: 1fr 1fr; }
+  .mini-tile { padding: 10px 12px; }
   .step { grid-template-columns: 46px 1fr; }
   .step p { font-size: 17px; }
 }
@@ -612,8 +686,13 @@ class KochbuchPanel extends HTMLElement {
   _applyRoute() {
     const path = (this._route && this._route.path) || "";
     const parts = path.split("/").filter(Boolean);
-    let view = { name: "list" };
-    if (parts[0] === "rezept" && parts[1]) view = { name: "detail", id: parts[1] };
+    let view = { name: "home" };
+    if (parts[0] === "kategorie" && parts[1]) {
+      view = { name: "list", id: parts[1] };
+      const f = { alle: "all", favoriten: "fav", ohne: "none" }[parts[1]] || decodeURIComponent(parts[1]);
+      if (f !== this.filter) this.search = "";
+      this.filter = f;
+    } else if (parts[0] === "rezept" && parts[1]) view = { name: "detail", id: parts[1] };
     else if (parts[0] === "neu") view = { name: "edit", id: null };
     else if (parts[0] === "bearbeiten" && parts[1]) view = { name: "edit", id: parts[1] };
     else if (parts[0] === "einstellungen") view = { name: "settings" };
@@ -645,6 +724,7 @@ class KochbuchPanel extends HTMLElement {
     }
     this.view = view;
     this.render();
+    if (view.name === "home" && prev.name === "list") this.search = "";
     if (prev.name !== view.name || prev.id !== view.id) window.scrollTo?.(0, 0);
     this.shadowRoot.host.scrollTop = 0;
   }
@@ -663,7 +743,7 @@ class KochbuchPanel extends HTMLElement {
   }
 
   _newDraft(base) {
-    const cat = this.filter !== "all" && this.filter !== "fav" ? this.filter : "";
+    const cat = this.view.name === "list" && this._cat(this.filter) ? this.filter : "";
     return {
       title: "", description: "", category: cat, tags: [], image: "",
       servings: this.settings.default_servings || 4, servings_unit: "Portionen",
@@ -686,7 +766,8 @@ class KochbuchPanel extends HTMLElement {
     else if (this.view.name === "detail") body = this._renderDetail();
     else if (this.view.name === "edit") body = this._renderEditor();
     else if (this.view.name === "settings") body = this._renderSettings();
-    else body = this._renderList();
+    else if (this.view.name === "list") body = this._renderList();
+    else body = this._renderHome();
 
     root.innerHTML = `<style>${STYLES}</style>${body}${this._renderCook()}${this._renderDialog()}${this._renderTimers()}${this._toast ? `<div class="toast ${this._toast.err ? "err" : ""}" role="status">${esc(this._toast.text)}</div>` : ""}`;
     const mb = root.querySelector("ha-menu-button");
@@ -708,11 +789,12 @@ class KochbuchPanel extends HTMLElement {
       <h2>Das Kochbuch lässt sich nicht laden</h2><p>${esc(this._loadError)}. Starte Home Assistant neu, nachdem du die Integration installiert oder aktualisiert hast.</p></div>`;
   }
 
-  _filtered() {
+  _filtered(filter = this.filter) {
     const q = this.search.trim().toLowerCase();
     let list = this.recipes.filter((r) => {
-      if (this.filter === "fav" && !r.favorite) return false;
-      if (this.filter !== "all" && this.filter !== "fav" && r.category !== this.filter) return false;
+      if (filter === "fav" && !r.favorite) return false;
+      if (filter === "none" && r.category && this._cat(r.category)) return false;
+      if (!["all", "fav", "none"].includes(filter) && r.category !== filter) return false;
       if (!q) return true;
       const hay = [r.title, r.description, (r.tags || []).join(" "), (r.ingredients || []).map((i) => i.name).join(" ")].join(" ").toLowerCase();
       return q.split(/\s+/).every((w) => hay.includes(w));
@@ -728,43 +810,99 @@ class KochbuchPanel extends HTMLElement {
     return list.sort(sorts[this.sort] || sorts.title);
   }
 
+  _slug(filter) { return { all: "alle", fav: "favoriten", none: "ohne" }[filter] || filter; }
+
+  _filterName(filter) {
+    if (filter === "all") return "Alle Rezepte";
+    if (filter === "fav") return "Favoriten";
+    if (filter === "none") return "Ohne Kategorie";
+    return this._cat(filter)?.name || "Kategorie";
+  }
+
+  _header(cls, lead, title, sub) {
+    return this._top(cls, `${lead}
+      <div class="brand"><h1>${title}</h1>${sub ? `<span class="count">${sub}</span>` : ""}</div>
+      <div class="spacer"></div>
+      <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="${this.view.name === "home" ? "Rezept oder Zutat suchen" : `In ${esc(this._filterName(this.filter))} suchen`}" value="${esc(this.search)}" aria-label="Suchen"></label>
+      <button class="icon-btn" data-action="import" title="Aus dem Internet importieren" aria-label="Aus dem Internet importieren"><ha-icon icon="mdi:web-plus"></ha-icon></button>
+      <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
+      <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
+  }
+
+  _toolbar() {
+    return `<div class="toolbar"><span id="result-count">${this._resultLabel()}</span><div class="spacer"></div>
+        <label>Sortieren: <select id="sort">
+          ${[["title", "A–Z"], ["new", "Neueste"], ["time", "Schnellste"], ["rating", "Beste Bewertung"], ["cooked", "Oft gekocht"]].map(([v, l]) => `<option value="${v}" ${this.sort === v ? "selected" : ""}>${l}</option>`).join("")}
+        </select></label></div>`;
+  }
+
+  _renderHome() {
+    const n = this.recipes.length;
+    const header = this._header("list", "", "Kochbuch", `${n} ${n === 1 ? "Rezept" : "Rezepte"}`);
+    if (this.search.trim()) {
+      return `${header}<main>${this._toolbar()}<section class="grid" id="grid">${this._renderCards()}</section></main>`;
+    }
+    const cats = this.settings.categories || [];
+    const inCat = (id) => this.recipes.filter((r) => r.category === id);
+    const tiles = cats.map((c) => {
+      const list = inCat(c.id);
+      const pics = list.filter((r) => r.image).slice(0, 3);
+      return `<button class="cat-tile" style="--c:${esc(c.color)}" data-action="cat" data-id="${esc(c.id)}">
+        <ha-icon class="bg" icon="${esc(c.icon)}"></ha-icon>
+        ${pics.length ? `<span class="thumbs">${pics.map((r) => `<img src="${esc(r.image)}" alt="" loading="lazy">`).join("")}</span>` : ""}
+        <span class="ct-name">${esc(c.name)}</span>
+        <span class="ct-count">${list.length ? `${list.length} ${list.length === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</span>
+      </button>`;
+    }).join("");
+    const favs = this.recipes.filter((r) => r.favorite).length;
+    const none = this.recipes.filter((r) => !r.category || !this._cat(r.category)).length;
+    const mini = [
+      `<button class="mini-tile" data-action="cat" data-id="all"><ha-icon icon="mdi:book-open-variant"></ha-icon><span><b>Alle Rezepte</b><small>${n}</small></span></button>`,
+      `<button class="mini-tile mini-fav" data-action="cat" data-id="fav"><ha-icon icon="mdi:heart"></ha-icon><span><b>Favoriten</b><small>${favs}</small></span></button>`,
+      none ? `<button class="mini-tile" data-action="cat" data-id="none"><ha-icon icon="mdi:tag-off-outline"></ha-icon><span><b>Ohne Kategorie</b><small>${none}</small></span></button>` : "",
+    ].join("");
+    const newest = this.recipes.slice().sort((a, b) => (b.created || "").localeCompare(a.created || "")).slice(0, 4);
+    return `${header}<main class="home">
+      ${n ? "" : `<div class="welcome"><div><h2>Willkommen im Kochbuch</h2><p>Wählt eine Kategorie und tragt das erste Rezept ein – oder holt eins per Link aus dem Internet.</p></div>
+        <div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button><button class="btn" data-action="import"><ha-icon icon="mdi:web-plus"></ha-icon>Aus dem Internet holen</button></div></div>`}
+      <section class="shelf" aria-label="Kategorien">${tiles}
+        <button class="cat-tile add" data-action="settings"><ha-icon icon="mdi:plus"></ha-icon><span class="ct-name">Kategorie</span><span class="ct-count">in den Einstellungen anlegen</span></button>
+      </section>
+      <div class="minis">${mini}</div>
+      ${newest.length ? `<h2 class="sec-title">Neu im Kochbuch</h2><section class="grid">${this._renderCards(newest)}</section>` : ""}
+    </main>`;
+  }
+
   _renderList() {
     const cats = this.settings.categories || [];
     const count = (id) => this.recipes.filter((r) => r.category === id).length;
     const favs = this.recipes.filter((r) => r.favorite).length;
+    const none = this.recipes.filter((r) => !r.category || !this._cat(r.category)).length;
+    const tab = (id, label, color, n, icon) =>
+      `<button class="tab ${this.filter === id ? "on" : ""}" data-action="filter" data-id="${esc(this._slug(id))}" style="--c:${color}">${icon || `<span class="dot"></span>`}${label} <span class="n">${n}</span></button>`;
     const tabs = [
-      `<button class="tab ${this.filter === "all" ? "on" : ""}" data-action="filter" data-id="all" style="--c:var(--kb-ink)">Alle <span class="n">${this.recipes.length}</span></button>`,
-      `<button class="tab ${this.filter === "fav" ? "on" : ""}" data-action="filter" data-id="fav" style="--c:var(--kb-tomato)"><ha-icon icon="mdi:heart" style="--mdc-icon-size:16px;color:var(--kb-tomato)"></ha-icon>Favoriten <span class="n">${favs}</span></button>`,
-      ...cats.filter((c) => count(c.id) || this.filter === c.id).map((c) =>
-        `<button class="tab ${this.filter === c.id ? "on" : ""}" data-action="filter" data-id="${esc(c.id)}" style="--c:${esc(c.color)}"><span class="dot"></span>${esc(c.name)} <span class="n">${count(c.id)}</span></button>`),
+      tab("all", "Alle", "var(--kb-ink)", this.recipes.length, " "),
+      tab("fav", "Favoriten", "var(--kb-tomato)", favs, `<ha-icon icon="mdi:heart" style="--mdc-icon-size:16px;color:var(--kb-tomato)"></ha-icon>`),
+      ...cats.map((c) => tab(c.id, esc(c.name), esc(c.color), count(c.id))),
+      none || this.filter === "none" ? tab("none", "Ohne Kategorie", "var(--kb-ink-soft)", none) : "",
     ].join("");
-
-    const header = this._top("list", `
-      <div class="brand"><h1>Kochbuch</h1><span class="count">${this.recipes.length} ${this.recipes.length === 1 ? "Rezept" : "Rezepte"}</span></div>
-      <div class="spacer"></div>
-      <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="Rezept oder Zutat suchen" value="${esc(this.search)}" aria-label="Suchen"></label>
-      <button class="icon-btn" data-action="import" title="Aus dem Internet importieren" aria-label="Aus dem Internet importieren"><ha-icon icon="mdi:web-plus"></ha-icon></button>
-      <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
-      <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
-
-    if (!this.recipes.length) {
-      return `${header}<main><div class="empty">
-        <div class="plate"><ha-icon icon="mdi:chef-hat"></ha-icon></div>
-        <h2>Euer Kochbuch ist noch leer</h2>
-        <p>Schreibt das erste Lieblingsrezept auf oder holt eins von Chefkoch & Co. – die Adresse genügt.</p>
-        <div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button>
-        <button class="btn" data-action="import"><ha-icon icon="mdi:web-plus"></ha-icon>Aus dem Internet holen</button></div>
-      </div></main>`;
-    }
-
+    const c = this._cat(this.filter);
+    const lead = `<button class="icon-btn" data-action="home" aria-label="Zur Startseite"><ha-icon icon="mdi:arrow-left"></ha-icon></button>`;
+    const title = c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}` : esc(this._filterName(this.filter));
+    const header = this._header("list", lead, title, "");
+    const empty = !this._filtered().length && !this.search.trim();
     return `${header}<main>
       <nav class="tabs" aria-label="Kategorien">${tabs}</nav>
-      <div class="toolbar"><span id="result-count">${this._resultLabel()}</span><div class="spacer"></div>
-        <label>Sortieren: <select id="sort">
-          ${[["title", "A–Z"], ["new", "Neueste"], ["time", "Schnellste"], ["rating", "Beste Bewertung"], ["cooked", "Oft gekocht"]].map(([v, l]) => `<option value="${v}" ${this.sort === v ? "selected" : ""}>${l}</option>`).join("")}
-        </select></label></div>
-      <section class="grid" id="grid">${this._renderCards()}</section>
+      ${empty ? "" : this._toolbar()}
+      <section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>
     </main>`;
+  }
+
+  _emptyCategory() {
+    const c = this._cat(this.filter);
+    const what = this.filter === "fav" ? "Noch keine Favoriten. Tippt bei einem Rezept auf das Herz." : `In „${esc(this._filterName(this.filter))}“ gibt es noch kein Rezept.`;
+    return `<div class="empty" style="grid-column:1/-1"><div class="plate" ${c ? `style="color:${esc(c.color)}"` : ""}><ha-icon icon="${esc(c ? c.icon : this.filter === "fav" ? "mdi:heart-outline" : "mdi:chef-hat")}"></ha-icon></div>
+      <h2>${what}</h2>${this.filter === "fav" ? "" : `<p>Das erste Rezept landet direkt in dieser Kategorie.</p><div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button></div>`}</div>`;
   }
 
   _resultLabel() {
@@ -772,8 +910,8 @@ class KochbuchPanel extends HTMLElement {
     return n === 1 ? "1 Rezept" : `${n} Rezepte`;
   }
 
-  _renderCards() {
-    const list = this._filtered();
+  _renderCards(given) {
+    const list = given || this._filtered();
     if (!list.length) {
       return `<div class="empty" style="grid-column:1/-1"><div class="plate"><ha-icon icon="mdi:magnify-close"></ha-icon></div>
         <h2>Nichts gefunden</h2><p>Kein Rezept passt zu dieser Suche. Versucht einen anderen Begriff oder wählt „Alle“.</p></div>`;
@@ -817,7 +955,7 @@ class KochbuchPanel extends HTMLElement {
     const cookedN = (r.cooked || []).length;
 
     const header = this._top("", `
-      <button class="icon-btn" data-action="home" aria-label="Zurück zur Übersicht"><ha-icon icon="mdi:arrow-left"></ha-icon></button>
+      <button class="icon-btn" data-action="back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button>
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
       <button class="icon-btn" data-action="print" aria-label="Drucken" title="Drucken"><ha-icon icon="mdi:printer-outline"></ha-icon></button>
@@ -1041,7 +1179,7 @@ class KochbuchPanel extends HTMLElement {
     </div>
     <div class="savebar">
       <button class="btn" data-action="cancel-edit">Abbrechen</button>
-      <button class="btn primary" data-action="save" ${this._saving ? "disabled" : ""}><ha-icon icon="mdi:content-save-outline"></ha-icon>${isNew ? "Rezept speichern" : "Änderungen speichern"}</button>
+      <button class="btn primary" data-action="save" ${this._saving ? "disabled" : ""}><ha-icon icon="mdi:content-save-outline"></ha-icon><span class="lbl">${isNew ? "Rezept speichern" : "Änderungen speichern"}</span><span class="lbl-m">Speichern</span></button>
     </div>`;
   }
 
@@ -1120,14 +1258,27 @@ class KochbuchPanel extends HTMLElement {
     const s = this.settingsDraft || this.settings;
     const todos = this._todoEntities();
     const name = (e) => this._hass.states[e]?.attributes?.friendly_name || e;
-    const cats = (s.categories || []).map((c, i) => `<div class="cat-row" data-cat="${i}">
-        <input type="color" data-c="color" value="${esc(c.color)}" aria-label="Farbe">
-        <input class="inp" data-c="name" value="${esc(c.name)}" aria-label="Name">
+    const total = (s.categories || []).length;
+    const used = (id) => this.recipes.filter((r) => r.category === id).length;
+    const cats = (s.categories || []).map((c, i) => `<div class="cat-row ${this._flashCat === i ? "flash" : ""}" data-cat="${i}">
+        <input type="color" data-c="color" value="${esc(c.color)}" aria-label="Farbe von ${esc(c.name)}">
+        <span class="prev" style="background:${esc(c.color)}"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>
+        <span class="name-cell"><input class="inp" data-c="name" value="${esc(c.name)}" aria-label="Name der Kategorie" placeholder="Name"><small>${used(c.id) === 1 ? "1 Rezept" : `${used(c.id)} Rezepte`}</small></span>
         <select class="inp" data-c="icon" aria-label="Symbol">${[...new Set([c.icon, ...ICONS])].map((ic) => `<option value="${esc(ic)}" ${ic === c.icon ? "selected" : ""}>${esc(ic.replace("mdi:", ""))}</option>`).join("")}</select>
-        <button class="icon-btn" data-action="cat-del" data-idx="${i}" aria-label="Kategorie entfernen"><ha-icon icon="mdi:trash-can-outline"></ha-icon></button>
+        <span class="order">
+          <button class="icon-btn" data-action="cat-up" data-idx="${i}" aria-label="Nach oben" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
+          <button class="icon-btn" data-action="cat-down" data-idx="${i}" aria-label="Nach unten" ${i === total - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
+          <button class="icon-btn del" data-action="cat-del" data-idx="${i}" aria-label="${esc(c.name)} löschen"><ha-icon icon="mdi:trash-can-outline"></ha-icon></button>
+        </span>
       </div>`).join("");
-    return `${this._top("", `<button class="icon-btn" data-action="home" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button><div class="brand"><h1>Einstellungen</h1></div>`)}
+    this._flashCat = null;
+    return `${this._top("", `<button class="icon-btn" data-action="back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button><div class="brand"><h1>Einstellungen</h1></div>`)}
     <div class="editor">
+      <section class="panel"><h2>Kategorien</h2>
+        <p class="muted" style="margin:-6px 0 14px">So erscheinen die Kategorien auf der Startseite. Mit den Pfeilen ändert ihr die Reihenfolge.</p>
+        <div class="rows">${cats || `<p class="muted">Noch keine Kategorien.</p>`}</div>
+        <div class="add-row"><button class="btn" data-action="cat-add"><ha-icon icon="mdi:plus"></ha-icon>Kategorie hinzufügen</button></div>
+      </section>
       <section class="panel"><h2>Einkaufsliste</h2>
         <div class="fields">
           <div class="f s3"><label for="s-list">Zutaten landen in</label>
@@ -1135,10 +1286,6 @@ class KochbuchPanel extends HTMLElement {
           <div class="f s3"><label for="s-serv">Standard-Portionen für neue Rezepte</label><input id="s-serv" type="number" min="1" data-s="default_servings" value="${s.default_servings || 4}"></div>
         </div>
         ${todos.length ? "" : `<p class="hint">Keine To-do-Liste gefunden. Richtet unter Einstellungen › Geräte & Dienste die Integration „Einkaufsliste“ ein.</p>`}
-      </section>
-      <section class="panel"><h2>Kategorien</h2>
-        <div class="rows">${cats}</div>
-        <div class="add-row"><button class="btn" data-action="cat-add"><ha-icon icon="mdi:plus"></ha-icon>Kategorie</button></div>
       </section>
       <section class="panel"><h2>Sicherung</h2>
         <p class="muted" style="margin-top:0">Speichert alle Rezepte als Datei oder spielt eine Sicherung wieder ein. Fotos bleiben im Ordner <code>kochbuch_bilder</code> eurer Home-Assistant-Konfiguration.</p>
@@ -1149,7 +1296,7 @@ class KochbuchPanel extends HTMLElement {
       </section>
       <p class="muted" style="text-align:center">Kochbuch ${KB_VERSION}</p>
     </div>
-    <div class="savebar"><button class="btn" data-action="home">Abbrechen</button><button class="btn primary" data-action="settings-save"><ha-icon icon="mdi:content-save-outline"></ha-icon>Einstellungen speichern</button></div>`;
+    <div class="savebar"><button class="btn" data-action="back">Abbrechen</button><button class="btn primary" data-action="settings-save"><ha-icon icon="mdi:content-save-outline"></ha-icon><span class="lbl">Einstellungen speichern</span><span class="lbl-m">Speichern</span></button></div>`;
   }
 
   _readSettings() {
@@ -1172,6 +1319,9 @@ class KochbuchPanel extends HTMLElement {
       const r = this._recipe(d.id);
       inner = `<h2>Rezept löschen?</h2><p>„${esc(r?.title)}“ wird mit Foto endgültig aus dem Kochbuch entfernt.</p>
         <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="delete-confirm">Löschen</button></div>`;
+    } else if (d.type === "cat-del") {
+      inner = `<h2>„${esc(d.name)}“ löschen?</h2><p>${d.n === 1 ? "Ein Rezept gehört" : `${d.n} Rezepte gehören`} zu dieser Kategorie. Die Rezepte bleiben erhalten und erscheinen danach unter „Ohne Kategorie“. Gelöscht wird erst beim Speichern der Einstellungen.</p>
+        <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="cat-del-confirm">Kategorie löschen</button></div>`;
     } else if (d.type === "import") {
       inner = `<h2>Rezept aus dem Internet</h2><p>Fügt die Adresse eines Rezepts ein, z. B. von Chefkoch, Lecker oder einem Foodblog. Ihr könnt alles vor dem Speichern noch anpassen.</p>
         <input class="inp" id="import-url" type="url" placeholder="https://www.chefkoch.de/rezepte/…" value="${esc(d.url || "")}" ${d.busy ? "disabled" : ""}>
@@ -1283,7 +1433,9 @@ class KochbuchPanel extends HTMLElement {
       case "new": this._navigatedInside = true; this._go("neu"); break;
       case "edit": this._navigatedInside = true; this._go(`bearbeiten/${id}`); break;
       case "settings": this._navigatedInside = true; this._go("einstellungen"); break;
-      case "filter": this.filter = id; this.render(); break;
+      case "filter": this._go(`kategorie/${encodeURIComponent(id)}`, true); break;
+      case "cat": this._navigatedInside = true; this._go(`kategorie/${encodeURIComponent(this._slug(id))}`); break;
+      case "back": this._back(); break;
       case "import": this.dialog = { type: "import" }; this._focusSel = "#import-url"; this.render(); break;
       case "dlg-close": this.dialog = null; this.render(); break;
       case "import-go": {
@@ -1357,10 +1509,36 @@ class KochbuchPanel extends HTMLElement {
       }
 
       // Einstellungen
-      case "cat-add": this._readSettings(); this.settingsDraft.categories.push({ id: Math.random().toString(36).slice(2, 10), name: "Neue Kategorie", icon: "mdi:food", color: "#2F5D50" }); this.render(); break;
-      case "cat-del": this._readSettings(); this.settingsDraft.categories.splice(idx, 1); this.render(); break;
+      case "cat-add": {
+        this._readSettings();
+        const palette = ["#D99A2B", "#C2452D", "#8A5A3B", "#B8738F", "#3F7F6E", "#5B7FA6", "#6A994E", "#9C6644", "#7D6BA8", "#D4703A"];
+        const n = this.settingsDraft.categories.length;
+        this.settingsDraft.categories.push({ id: Math.random().toString(36).slice(2, 10), name: "", icon: "mdi:food", color: palette[n % palette.length] });
+        this._focusSel = `[data-cat="${n}"] [data-c="name"]`;
+        this.render();
+        break;
+      }
+      case "cat-up": case "cat-down": {
+        this._readSettings();
+        const j = idx + (a === "cat-up" ? -1 : 1);
+        this._move(this.settingsDraft.categories, idx, a === "cat-up" ? -1 : 1);
+        this._flashCat = j;
+        this._focusSel = `[data-cat="${j}"] [data-action="${a}"]:not([disabled])`;
+        this.render();
+        break;
+      }
+      case "cat-del": {
+        this._readSettings();
+        const c = this.settingsDraft.categories[idx];
+        const n = this.recipes.filter((r) => r.category === c.id).length;
+        if (n) { this.dialog = { type: "cat-del", idx, name: c.name, n }; this.render(); }
+        else { this.settingsDraft.categories.splice(idx, 1); this.render(); }
+        break;
+      }
+      case "cat-del-confirm": this.settingsDraft.categories.splice(this.dialog.idx, 1); this.dialog = null; this.render(); break;
       case "settings-save": {
         this._readSettings();
+        this.settingsDraft.categories = this.settingsDraft.categories.filter((c) => c.name.trim());
         try {
           this.settings = await this._hass.callWS({ type: "kochbuch/settings", settings: this.settingsDraft });
           this._showToast("Einstellungen gespeichert");
@@ -1388,7 +1566,9 @@ class KochbuchPanel extends HTMLElement {
 
   _onInput(e) {
     if (e.target.id === "search") {
+      const was = !!this.search.trim();
       this.search = e.target.value;
+      if (this.view.name === "home" && was !== !!this.search.trim()) { this._focusSel = "#search"; this.render(); return; }
       const grid = this.shadowRoot.querySelector("#grid");
       if (grid) grid.innerHTML = this._renderCards();
       const rc = this.shadowRoot.querySelector("#result-count");
@@ -1398,6 +1578,12 @@ class KochbuchPanel extends HTMLElement {
 
   async _onChange(e) {
     const t = e.target;
+    if (t.dataset && (t.dataset.c === "color" || t.dataset.c === "icon")) {
+      const row = t.closest(".cat-row"); const prev = row && row.querySelector(".prev");
+      if (prev && t.dataset.c === "color") prev.style.background = t.value;
+      if (prev && t.dataset.c === "icon") prev.querySelector("ha-icon").setAttribute("icon", t.value);
+      return;
+    }
     if (t.id === "sort") { this.sort = t.value; localStorage.setItem("kochbuch-sort", t.value); this.render(); }
     else if (t.id === "img-file" && t.files?.[0]) this._uploadImage(t.files[0]);
     else if (t.id === "backup-file" && t.files?.[0]) {

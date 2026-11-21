@@ -2,12 +2,14 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.0.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.1.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
 - **Rezepte sammeln** mit Foto, Kategorie, Schlagworten, Zeiten, Schwierigkeit, Bewertung, Zutaten (mit Zwischenüberschriften) und Arbeitsschritten
-- **Übersicht mit Register-Reitern** pro Kategorie, Favoriten, Suche (auch nach Zutaten) und Sortierung
+- **Startseite mit Kategorien** als große Kacheln, dazu Alle Rezepte, Favoriten und die neuesten Rezepte
+- **Kategorien verwalten** in den Einstellungen: hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen
+- **Rezeptlisten mit Register-Reitern** pro Kategorie, Suche (auch nach Zutaten) und Sortierung
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
 - **Einkaufsliste**: Zutaten antippen, die schon da sind – der Rest landet in eurer To-do-Liste (z. B. „Einkaufsliste“)
 - **Kochmodus**: ein Schritt pro Bildschirm in großer Schrift, Bildschirm bleibt an, Zutaten daneben
@@ -16,7 +18,6 @@ Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in de
 - **Zutatenliste einfügen**: ganze Liste aus der Zwischenablage, wird automatisch in Menge/Einheit/Zutat zerlegt
 - **Drucken** als schlichtes Rezeptblatt
 - **Sicherung** herunterladen und wieder einspielen
-- **Eigene Kategorien** mit Farbe und Symbol
 - **Dashboard-Karte** „Heute kochen“, Lieblingsrezepte oder neue Rezepte
 - **Sensor** `sensor.kochbuch_rezepte` mit Anzahl, Favoriten und Rezept des Tages
 - Hell- und Dunkelmodus, optimiert für Handy, Tablet und Desktop
@@ -57,14 +58,17 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.1.0 | Startseite zeigt die Kategorien als Kacheln; Kategorien in den Einstellungen anlegen, bearbeiten, sortieren und löschen; neue Standard-Kategorien Nudeln, Soßen, Braten, Backen, Suppen |
 | 1.0.1 | Handy: Suchfeld in eigener Zeile, Kopfzeile passt wieder aufs Display; Mengen wie 1/2 werden als ½ angezeigt; Karten-Schriften korrigiert |
 | 1.0.0 | Erste Version: Rezeptverwaltung, Kochmodus, Timer, Einkaufsliste, Web-Import, Sicherung, Dashboard-Karte, Sensor |
 
 ## So sieht es aus
 
-| Übersicht | Rezept |
+| Startseite | Rezept |
 |---|---|
-| ![Übersicht](docs/screenshots/1_list.png) | ![Rezept](docs/screenshots/2_detail.png) |
+| ![Startseite](docs/screenshots/home.png) | ![Rezept](docs/screenshots/2_detail.png) |
+| **Kategorie** | **Kategorien verwalten** |
+| ![Kategorie](docs/screenshots/kategorie.png) | ![Einstellungen](docs/screenshots/einstellungen.png) |
 | **Kochmodus** | **Handy** |
 | ![Kochmodus](docs/screenshots/4_cook.png) | ![Handy](docs/screenshots/6_mobile.png) |
 

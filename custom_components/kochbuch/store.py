@@ -16,7 +16,9 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
 from .const import (
+    DEFAULT_CATEGORIES,
     DEFAULT_SETTINGS,
+    OLD_DEFAULT_CATEGORY_IDS,
     IMAGES_DIR,
     IMAGES_URL,
     SIGNAL_UPDATED,
@@ -123,6 +125,14 @@ class KochbuchStore:
             settings = data.get("settings") or {}
             for key, value in settings.items():
                 self.settings[key] = value
+            cats = self.settings.get("categories") or []
+            if {c.get("id") for c in cats} == OLD_DEFAULT_CATEGORY_IDS:
+                used = {r.get("category") for r in self.recipes.values()}
+                keep = [c for c in cats if c["id"] in used and c["id"] != "backen"]
+                self.settings["categories"] = copy.deepcopy(DEFAULT_CATEGORIES) + keep
+                await self._store.async_save(
+                    {"recipes": list(self.recipes.values()), "settings": self.settings}
+                )
         await self.hass.async_add_executor_job(
             lambda: os.makedirs(self.images_path, exist_ok=True)
         )

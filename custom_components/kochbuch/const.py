@@ -1,7 +1,7 @@
 """Konstanten für die Kochbuch-Integration."""
 
 DOMAIN = "kochbuch"
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 
 STORAGE_KEY = "kochbuch.rezepte"
 STORAGE_VERSION = 1
@@ -18,19 +18,19 @@ IMAGES_DIR = "kochbuch_bilder"
 SIGNAL_UPDATED = "kochbuch_updated"
 
 DEFAULT_CATEGORIES = [
-    {"id": "fruehstueck", "name": "Frühstück", "icon": "mdi:egg-fried", "color": "#E9A23B"},
-    {"id": "vorspeise", "name": "Vorspeise", "icon": "mdi:food-variant", "color": "#8FA37E"},
-    {"id": "suppe", "name": "Suppe", "icon": "mdi:pot-steam", "color": "#D9822B"},
-    {"id": "salat", "name": "Salat", "icon": "mdi:leaf", "color": "#6A994E"},
-    {"id": "hauptgericht", "name": "Hauptgericht", "icon": "mdi:silverware-fork-knife", "color": "#C8553D"},
-    {"id": "pasta", "name": "Pasta", "icon": "mdi:pasta", "color": "#D4A373"},
-    {"id": "beilage", "name": "Beilage", "icon": "mdi:rice", "color": "#B5838D"},
-    {"id": "sauce", "name": "Saucen & Dips", "icon": "mdi:bowl-mix", "color": "#9C6644"},
-    {"id": "dessert", "name": "Dessert", "icon": "mdi:ice-cream", "color": "#E07A9F"},
-    {"id": "backen", "name": "Backen", "icon": "mdi:cupcake", "color": "#B07D62"},
-    {"id": "snack", "name": "Snack", "icon": "mdi:food-croissant", "color": "#CB997E"},
-    {"id": "getraenk", "name": "Getränke", "icon": "mdi:glass-cocktail", "color": "#4D908E"},
+    {"id": "nudeln", "name": "Nudeln", "icon": "mdi:pasta", "color": "#D99A2B"},
+    {"id": "sossen", "name": "Soßen", "icon": "mdi:bowl-mix", "color": "#C2452D"},
+    {"id": "braten", "name": "Braten", "icon": "mdi:food-turkey", "color": "#8A5A3B"},
+    {"id": "backen", "name": "Backen", "icon": "mdi:cake-variant", "color": "#B8738F"},
+    {"id": "suppen", "name": "Suppen", "icon": "mdi:pot-steam", "color": "#3F7F6E"},
 ]
+
+# Kategorien der Version 1.0.x – werden einmalig durch die neuen ersetzt,
+# solange sie unverändert sind.
+OLD_DEFAULT_CATEGORY_IDS = {
+    "fruehstueck", "vorspeise", "suppe", "salat", "hauptgericht", "pasta",
+    "beilage", "sauce", "dessert", "backen", "snack", "getraenk",
+}
 
 DEFAULT_SETTINGS = {
     "shopping_list": "",
