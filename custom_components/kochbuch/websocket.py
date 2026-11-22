@@ -16,6 +16,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN, SIGNAL_UPDATED, VERSION
 from .importer import async_import_url
+from .bring import BringClient, BringError
 from .backup import BackupError, clean_backup_config, public_backup, test_connection
 from .store import IMAGE_TYPES, KochbuchStore
 
@@ -45,6 +46,11 @@ def async_register(hass: HomeAssistant) -> None:
         ws_backup_save,
         ws_backup_test,
         ws_backup_run,
+        ws_bring_login,
+        ws_bring_lists,
+        ws_bring_select,
+        ws_bring_logout,
+        ws_bring_add,
     ):
         websocket_api.async_register_command(hass, handler)
 
@@ -233,3 +239,103 @@ async def ws_backup_run(hass, connection, msg):
     connection.send_result(
         msg["id"], {"backup": public_backup(_store(hass).backup), "message": message}
     )
+
+
+# ------------------------------------------------------------------ Bring!
+def _bring(hass: HomeAssistant) -> BringClient:
+    return BringClient(hass, dict(_store(hass).bring_auth))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kochbuch/bring_login",
+        vol.Required("email"): str,
+        vol.Required("password"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_bring_login(hass, connection, msg):
+    client = BringClient(hass, {})
+    try:
+        auth = await client.async_login(msg["email"].strip(), msg["password"])
+        lists = await client.async_lists()
+    except BringError as err:
+        connection.send_error(msg["id"], "bring_failed", str(err))
+        return
+    chosen = next((l for l in lists if l["uuid"] == auth.get("default_list")), lists[0] if lists else None)
+    public = await _store(hass).async_set_bring(
+        auth, chosen["uuid"] if chosen else "", chosen["name"] if chosen else ""
+    )
+    connection.send_result(msg["id"], {"bring": public, "lists": lists})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "kochbuch/bring_lists"})
+@websocket_api.async_response
+async def ws_bring_lists(hass, connection, msg):
+    client = _bring(hass)
+    try:
+        lists = await client.async_lists()
+    except BringError as err:
+        connection.send_error(msg["id"], "bring_failed", str(err))
+        return
+    store = _store(hass)
+    store.bring_auth = client.auth
+    await store.async_save_bring_tokens()
+    connection.send_result(msg["id"], {"lists": lists})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kochbuch/bring_select",
+        vol.Required("list_uuid"): str,
+        vol.Required("list_name"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_bring_select(hass, connection, msg):
+    store = _store(hass)
+    if not store.bring_auth:
+        connection.send_error(msg["id"], "bring_failed", "Nicht bei Bring! angemeldet")
+        return
+    public = await store.async_set_bring(store.bring_auth, msg["list_uuid"], msg["list_name"])
+    connection.send_result(msg["id"], {"bring": public})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "kochbuch/bring_logout"})
+@websocket_api.async_response
+async def ws_bring_logout(hass, connection, msg):
+    await _store(hass).async_set_bring(None)
+    connection.send_result(msg["id"], {"bring": {}})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kochbuch/bring_add",
+        vol.Required("items"): [{vol.Required("name"): str, vol.Optional("spec", default=""): str}],
+    }
+)
+@websocket_api.async_response
+async def ws_bring_add(hass, connection, msg):
+    store = _store(hass)
+    info = store.settings.get("bring") or {}
+    if not store.bring_auth or not info.get("list_uuid"):
+        connection.send_error(
+            msg["id"], "bring_failed", "Bring! ist nicht eingerichtet. Bitte in den Einstellungen anmelden"
+        )
+        return
+    client = _bring(hass)
+    items = [
+        {"name": i["name"].strip()[:100], "spec": i.get("spec", "").strip()[:100]}
+        for i in msg["items"]
+        if i["name"].strip()
+    ]
+    try:
+        count = await client.async_add_items(info["list_uuid"], items)
+    except BringError as err:
+        connection.send_error(msg["id"], "bring_failed", str(err))
+        return
+    finally:
+        if client.auth.get("access_token") != store.bring_auth.get("access_token"):
+            store.bring_auth = client.auth
+            await store.async_save_bring_tokens()
+    connection.send_result(msg["id"], {"added": count, "list_name": info.get("list_name", "")})

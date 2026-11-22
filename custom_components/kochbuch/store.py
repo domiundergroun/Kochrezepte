@@ -127,12 +127,14 @@ class KochbuchStore:
         self.settings: dict[str, Any] = copy.deepcopy(DEFAULT_SETTINGS)
         self.images_path = hass.config.path(IMAGES_DIR)
         self.backup: dict[str, Any] = copy.deepcopy(DEFAULT_BACKUP)
+        self.bring_auth: dict[str, Any] = {}
 
     def _data(self) -> dict[str, Any]:
         return {
             "recipes": list(self.recipes.values()),
             "settings": self.settings,
             "backup": self.backup,
+            "bring_auth": self.bring_auth,
         }
 
     async def async_load(self) -> None:
@@ -142,6 +144,8 @@ class KochbuchStore:
             settings = data.get("settings") or {}
             for key, value in settings.items():
                 self.settings[key] = value
+            if isinstance(data.get("bring_auth"), dict):
+                self.bring_auth = data["bring_auth"]
             if isinstance(data.get("backup"), dict):
                 self.backup = {**copy.deepcopy(DEFAULT_BACKUP), **data["backup"]}
             cats = self.settings.get("categories") or []
@@ -577,3 +581,24 @@ class KochbuchStore:
     async def async_set_backup_status(self, last: dict[str, Any]) -> None:
         self.backup["last"] = last
         await self._async_save()
+
+    # ------------------------------------------------------------------ Bring!
+    async def async_set_bring(
+        self, auth: dict[str, Any] | None, list_uuid: str = "", list_name: str = ""
+    ) -> dict[str, Any]:
+        if auth is None:
+            self.bring_auth = {}
+            self.settings["bring"] = {}
+        else:
+            self.bring_auth = auth
+            self.settings["bring"] = {
+                "email": auth.get("email", ""),
+                "name": auth.get("name", ""),
+                "list_uuid": list_uuid,
+                "list_name": list_name,
+            }
+        await self._async_save()
+        return self.settings["bring"]
+
+    async def async_save_bring_tokens(self) -> None:
+        await self._store.async_save(self._data())

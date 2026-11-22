@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.3.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.4.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -11,7 +11,8 @@ Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in de
 - **Kategorien verwalten** in den Einstellungen: hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
-- **Einkaufsliste**: Zutaten antippen, die schon da sind – der Rest landet in eurer To-do-Liste (z. B. „Einkaufsliste“)
+- **Bring!-Anbindung**: in den Einstellungen mit dem Bring!-Konto anmelden und die Liste wählen; im Rezept „Zu Bring! hinzufügen“ zeigt alle Zutaten, ihr wählt ab, was daheim ist, der Rest landet in Bring!
+- **Einkaufsliste in Home Assistant** (To-do-Liste) als Alternative oder zusätzlich
 - **Zubereitung in zwei Teilen**: Vorbereitung (schneiden, abwiegen …) und Kochen, jeweils mit eigener Zeit
 - **Kochmodus**: ein Schritt pro Bildschirm in großer Schrift, Bildschirm bleibt an, Zutaten daneben
 - **Timer**: „20 Minuten“ im Text wird automatisch zum Timer-Knopf, mit Signalton
@@ -61,6 +62,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.4.0 | Bring!-Anbindung mit Anmeldung und Listenauswahl; Auswahl-Dialog vor dem Hinzufügen der Zutaten; Einstellungen in einklappbaren Bereichen |
 | 1.3.0 | Zubereitung getrennt in Vorbereitung und Kochen; Rezepte exportieren/importieren (einzeln, Kategorie, alle); Sicherung als ZIP mit Fotos; automatisches Backup per FTP aufs Netzwerklaufwerk |
 | 1.2.0 | Startseite zeigt nur noch die Kategorien; Reiterleiste ersetzt durch „Kochbuch › Kategorie“ zum Zurückspringen; Kategorie beim Rezept ist Pflicht; beim Löschen einer Kategorie wählt ihr, wohin die Rezepte wandern |
 | 1.1.0 | Startseite zeigt die Kategorien als Kacheln; Kategorien in den Einstellungen anlegen, bearbeiten, sortieren und löschen; neue Standard-Kategorien Nudeln, Soßen, Braten, Backen, Suppen |
@@ -76,6 +78,10 @@ anzahl: 4          # bei favoriten/neu
 | ![Kategorie](docs/screenshots/kategorie.png) | ![Einstellungen](docs/screenshots/einstellungen.png) |
 | **Kochmodus** | **Handy** |
 | ![Kochmodus](docs/screenshots/4_cook.png) | ![Handy](docs/screenshots/6_mobile.png) |
+
+Zutaten zu Bring! hinzufügen:
+
+![Bring!](docs/screenshots/bring.png)
 
 Dashboard-Karte:
 
