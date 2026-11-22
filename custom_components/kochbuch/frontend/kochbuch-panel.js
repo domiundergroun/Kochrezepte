@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.6.1";
+const KB_VERSION = "1.6.2";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -286,7 +286,16 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 }
 .card .pic { aspect-ratio: 4 / 3; border-radius: 0 16px 0 0; overflow: hidden; position: relative; }
 .card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.card h3 { font-size: 20px; font-weight: 700; line-height: 1.15; }
+.card { min-width: 0; }
+.card h3 { font-size: 20px; font-weight: 700; line-height: 1.15; min-height: 2.3em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; hyphens: auto; }
+.card .desc { height: 2.9em; line-height: 1.45; }
+.card h3 { height: 2.3em; }
+.card .facts { line-height: 1.5; height: 1.5em; }
+.card .facts { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+.top.has-search .row1 { display: contents; }
+.top.has-search .row1 > .spacer { order: 1; }
+.top.has-search > .search { order: 2; }
+.top.has-search .row1 > .icon-btn, .top.has-search .row1 > .btn { order: 3; }
 .card .desc { color: var(--kb-ink-soft); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .facts { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--kb-ink-soft); font-size: 14px; margin-top: auto; }
 .facts span { display: inline-flex; align-items: center; gap: 5px; }
@@ -741,11 +750,20 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .search { width: auto; flex: 1; min-width: 0; padding: 0 12px; }
   .top { gap: 6px; }
   .brand h1 { font-size: 22px; }
-  .top.list { flex-wrap: wrap; row-gap: 8px; }
-  .top.list .search { order: 10; flex: 1 0 100%; margin-left: 8px; }
+  .top.has-search { flex-direction: column; align-items: stretch; gap: 8px; }
+  .top.has-search .row1 { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .top.has-search .row1 > * { order: 0; }
+  .top.has-search .row1 > .brand, .top.has-search .row1 > .crumbs { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+  .top.has-search .row1 > .icon-btn, .top.has-search .row1 > .btn, .top.has-search .row1 > ha-menu-button { flex: none; }
+  .top.has-search > .search { order: 0; width: 100%; margin: 0; flex: none; }
+  .crumbs button { min-width: 0; max-width: 100%; }
+  .crumbs button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brand h1 { overflow: hidden; text-overflow: ellipsis; }
   .top.list .brand .count { display: none; }
   main, .detail, .editor { padding-left: 14px; padding-right: 14px; }
-  .grid { grid-template-columns: 1fr 1fr; gap: 22px 12px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 12px; }
+  .card .facts { flex-wrap: wrap; white-space: normal; line-height: 1.5; height: calc(3em + 4px); align-content: flex-start; margin-top: 0; }
+  .card h3 { height: 2.3em; min-height: 0; }
   .card h3 { font-size: 16px; }
   .card .desc { display: none; }
   .card .body { padding: 10px 12px 12px; }
@@ -822,6 +840,7 @@ class KochbuchPanel extends HTMLElement {
   }
 
   connectedCallback() {
+    if (!this.hasAttribute("lang")) this.setAttribute("lang", "de");
     document.addEventListener("keydown", this._onDocKey);
   }
 
@@ -1001,7 +1020,10 @@ class KochbuchPanel extends HTMLElement {
   }
 
   _top(cls, inner) {
-    return `<header class="top ${cls || ""}"><ha-menu-button></ha-menu-button>${inner}</header>`;
+    const m = inner.match(/<label class="search">[\s\S]*?<\/label>/);
+    if (!m) return `<header class="top ${cls || ""}"><ha-menu-button></ha-menu-button>${inner}</header>`;
+    // Suchfeld getrennt, damit es auf dem Handy eine eigene Zeile bekommt
+    return `<header class="top has-search ${cls || ""}"><div class="row1"><ha-menu-button></ha-menu-button>${inner.replace(m[0], "")}</div>${m[0]}</header>`;
   }
 
   _renderError() {
@@ -1144,7 +1166,7 @@ class KochbuchPanel extends HTMLElement {
         <button class="fav ${r.favorite ? "on" : ""}" data-action="fav" data-id="${esc(r.id)}" aria-label="${r.favorite ? "Aus Favoriten entfernen" : "Zu Favoriten"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
         <div class="body">
           <h3>${esc(r.title)}</h3>
-          ${r.description ? `<div class="desc">${esc(r.description)}</div>` : ""}
+          <div class="desc">${esc(r.description || "")}</div>
           <div class="facts">
             ${total ? `<span><ha-icon icon="mdi:clock-outline"></ha-icon>${fmtMinutes(total)}</span>` : ""}
             <span><ha-icon icon="mdi:chef-hat"></ha-icon>${DIFFICULTY[r.difficulty] || "Einfach"}</span>
