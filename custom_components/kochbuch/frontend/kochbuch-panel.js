@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.6.0";
+const KB_VERSION = "1.6.1";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -60,6 +60,43 @@ function parseIngredientLine(line) {
     }
   }
   return { amount, unit, name: rest.replace(/^,\s*/, ""), group: "" };
+}
+
+/** Reihenfolge für die Anzeige: Erledigtes/Abgewähltes rutscht ans Ende seiner Gruppe. */
+function orderWithin(entries, isDown) {
+  const out = [];
+  let seg = [];
+  const flush = () => { out.push(...seg.filter((e) => !isDown(e)), ...seg.filter((e) => isDown(e))); seg = []; };
+  for (const e of entries) {
+    if (e.heading) { flush(); out.push(e); } else seg.push(e);
+  }
+  flush();
+  return out;
+}
+
+/** Sortiert die Listeneinträge im DOM neu und animiert die Bewegung (ohne Neuaufbau, Scrollposition bleibt). */
+function reorderList(ul, itemSel, isDown) {
+  if (!ul) return;
+  const kids = [...ul.children];
+  const before = new Map(kids.map((el) => [el, el.getBoundingClientRect().top]));
+  const entries = kids.map((el) => ({ el, heading: !el.matches(itemSel), key: Number(el.dataset.idx ?? el.dataset.i ?? 0) }));
+  // innerhalb einer Gruppe nach ursprünglicher Reihenfolge, Erledigtes zuletzt
+  const ordered = [];
+  let seg = [];
+  const flush = () => {
+    seg.sort((a, b) => a.key - b.key);
+    ordered.push(...seg.filter((e) => !isDown(e.el)), ...seg.filter((e) => isDown(e.el)));
+    seg = [];
+  };
+  for (const e of entries) { if (e.heading) { flush(); ordered.push(e); } else seg.push(e); }
+  flush();
+  ordered.forEach((e) => ul.appendChild(e.el));
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  for (const e of ordered) {
+    const dy = before.get(e.el) - e.el.getBoundingClientRect().top;
+    if (!dy) continue;
+    e.el.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], { duration: 260, easing: "cubic-bezier(.2,.7,.3,1)" });
+  }
 }
 
 function fmtMinutes(min) {
@@ -938,9 +975,24 @@ class KochbuchPanel extends HTMLElement {
     else if (this.view.name === "list") body = this._renderList();
     else body = this._renderHome();
 
+    // Scrollpositionen merken, damit ein Neuaufbau nicht nach oben springt
+    const keep = [];
+    for (let n = this; n; n = n.parentNode || n.host) {
+      if (n.scrollTop > 0) keep.push([n, n.scrollTop]);
+      if (n === document.documentElement) break;
+    }
+    const winY = window.scrollY;
+    const inner = [".shop-list", ".cook aside", ".dialog"].map((sel) => [sel, root.querySelector(sel)?.scrollTop || 0]);
+    const sameView = this._lastView === `${this.view.name}:${this.view.id || ""}`;
+    this._lastView = `${this.view.name}:${this.view.id || ""}`;
     root.innerHTML = `<style>${STYLES}</style>${body}${this._renderCook()}${this._renderDialog()}${this._renderTimers()}${this._toast ? `<div class="toast ${this._toast.err ? "err" : ""}" role="status">${esc(this._toast.text)}</div>` : ""}`;
     const mb = root.querySelector("ha-menu-button");
     if (mb) { mb.hass = this._hass; mb.narrow = this._narrow; }
+    if (sameView) {
+      for (const [n, y] of keep) n.scrollTop = y;
+      if (window.scrollY !== winY) window.scrollTo(0, winY);
+      for (const [sel, y] of inner) { const el = root.querySelector(sel); if (el && y) el.scrollTop = y; }
+    }
     if (this._focusSel) {
       const el = root.querySelector(this._focusSel);
       if (el) { el.focus(); if (el.setSelectionRange && el.value) el.setSelectionRange(el.value.length, el.value.length); }
@@ -1129,7 +1181,7 @@ class KochbuchPanel extends HTMLElement {
       ${allSteps(r).length ? `<button class="btn saffron" data-action="cook"><ha-icon icon="mdi:stove"></ha-icon><span class="lbl">Kochmodus</span></button>` : ""}`);
 
     let ingHtml = "";
-    (r.ingredients || []).forEach((i, idx) => {
+    orderWithin((r.ingredients || []).map((i, idx) => ({ i, idx, heading: !i.name && !i.amount && !!i.group })), (e) => this.checked.has(e.idx)).forEach(({ i, idx }) => {
       if (!i.name && !i.amount && i.group) { ingHtml += `<li class="ing-group">${esc(i.group)}</li>`; return; }
       const amt = [scaleAmount(i.amount, factor), i.unit].filter(Boolean).join(" ");
       ingHtml += `<li class="ing ${this.checked.has(idx) ? "done" : ""}" data-action="check" data-idx="${idx}" role="checkbox" aria-checked="${this.checked.has(idx)}" tabindex="0">
@@ -1210,7 +1262,7 @@ class KochbuchPanel extends HTMLElement {
     const cur = steps[i] || { phase: PHASES[1], text: "", n: 1, of: 1 };
     const factor = (this.servings || r.servings) / (r.servings || 1);
     let ing = "";
-    (r.ingredients || []).forEach((x, idx) => {
+    orderWithin((r.ingredients || []).map((x, idx) => ({ x, idx, heading: !x.name && !x.amount && !!x.group })), (e) => this.checked.has(e.idx)).forEach(({ x, idx }) => {
       if (!x.name && !x.amount && x.group) { ing += `<li class="ing-group">${esc(x.group)}</li>`; return; }
       ing += `<li class="ing ${this.checked.has(idx) ? "done" : ""}" data-action="check" data-idx="${idx}"><span class="box">${this.checked.has(idx) ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : ""}</span><span class="amt">${esc([scaleAmount(x.amount, factor), x.unit].filter(Boolean).join(" "))}</span><span class="nm">${esc(x.name)}</span></li>`;
     });
@@ -1750,7 +1802,7 @@ class KochbuchPanel extends HTMLElement {
           <p>Mengen <button class="linkish shop-for" data-action="shop-back"><ha-icon icon="mdi:account-group-outline" style="--mdc-icon-size:18px"></ha-icon>für ${d.servings} ${esc(word)} (ändern)</button>. Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Bring!-Liste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : "auf die Einkaufsliste"}.</p>
           ${both ? `<div class="seg"><button class="${d.target === "bring" ? "on" : ""}" data-action="shop-target" data-t="bring">Bring!</button><button class="${d.target === "todo" ? "on" : ""}" data-action="shop-target" data-t="todo">Home Assistant</button></div>` : ""}
           <div class="shop-head"><span>${n} von ${total} ausgewählt</span><span><button class="linkish" data-action="shop-all" data-on="1">Alle</button><button class="linkish" data-action="shop-all" data-on="0">Keine</button></span></div>
-          <ul class="shop-list">${items.map((it) => it.group ? `<li class="shop-group">${esc(it.group)}</li>`
+          <ul class="shop-list">${orderWithin(items.map((it) => ({ ...it, heading: !!it.group })), (e) => !e.on).map((it) => it.group ? `<li class="shop-group">${esc(it.group)}</li>`
             : `<li class="shop-item ${it.on ? "on" : ""}" data-action="shop-toggle" data-i="${it.idx}" role="checkbox" aria-checked="${it.on}" tabindex="0"><span class="box">${it.on ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : ""}</span><span class="nm">${esc(it.name)}</span><span class="sp">${esc(it.spec)}</span></li>`).join("")}</ul>
           ${d.error ? `<p style="color:var(--kb-tomato);margin:10px 0 0">${esc(d.error)}</p>` : ""}
           <div class="row"><button class="btn" data-action="shop-back"><ha-icon icon="mdi:arrow-left"></ha-icon>Zurück</button><button class="btn ${d.target === "bring" ? "bring" : "primary"}" data-action="shop-go" ${n && !d.busy ? "" : "disabled"}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird gesendet` : `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${label}`}</button></div>`;
@@ -1804,6 +1856,19 @@ class KochbuchPanel extends HTMLElement {
     if (target === "todo" && !this._todoTarget()) { this._showToast("Keine Einkaufsliste eingerichtet – meldet euch in den Einstellungen bei Bring! an.", true); return; }
     this.dialog = { type: "shop", step: "servings", recipeId: r.id, servings: this.servings || r.servings, off: new Set(this.checked), target };
     this.render();
+  }
+
+  _updateShopCount() {
+    const d = this.dialog;
+    const items = this._shopItems(d).filter((i) => i.name);
+    const n = items.filter((i) => i.on).length;
+    const head = this.shadowRoot.querySelector(".shop-head > span");
+    if (head) head.textContent = `${n} von ${items.length} ausgewählt`;
+    const go = this.shadowRoot.querySelector('[data-action="shop-go"]');
+    if (go) {
+      go.disabled = !n;
+      go.innerHTML = `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${d.target === "bring" ? "zu Bring! hinzufügen" : "auf die Einkaufsliste"}`;
+    }
   }
 
   _shopItems(d) {
@@ -1942,9 +2007,30 @@ class KochbuchPanel extends HTMLElement {
       }
       case "rate": { const r = this._recipe(this.view.id); const n = Number(el.dataset.n); this._patch(r.id, { rating: r.rating === n ? 0 : n }); break; }
       case "serv": { const r = this._recipe(this.view.id); this.servings = Math.max(1, (this.servings || r.servings) + Number(el.dataset.d)); this.render(); break; }
-      case "check": { if (this.checked.has(idx)) this.checked.delete(idx); else this.checked.add(idx); this.render(); break; }
+      case "check": {
+        const done = !this.checked.has(idx);
+        if (done) this.checked.add(idx); else this.checked.delete(idx);
+        // alle Listen mit dieser Zutat (Rezept und Kochmodus) direkt anpassen, ohne Neuaufbau
+        this.shadowRoot.querySelectorAll(`.ing[data-idx="${idx}"]`).forEach((li) => {
+          li.classList.toggle("done", done);
+          li.setAttribute("aria-checked", String(done));
+          li.querySelector(".box").innerHTML = done ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : "";
+          reorderList(li.parentElement, ".ing", (x) => x.classList.contains("done"));
+        });
+        break;
+      }
       case "shop": this._openShop(); break;
-      case "shop-toggle": { const k = Number(el.dataset.i); const off = this.dialog.off; if (off.has(k)) off.delete(k); else off.add(k); this._focusSel = `.shop-item[data-i="${k}"]`; this.render(); break; }
+      case "shop-toggle": {
+        const k = Number(el.dataset.i); const d = this.dialog; const off = d.off;
+        const on = off.has(k);
+        if (on) off.delete(k); else off.add(k);
+        el.classList.toggle("on", on);
+        el.setAttribute("aria-checked", String(on));
+        el.querySelector(".box").innerHTML = on ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : "";
+        reorderList(el.parentElement, ".shop-item", (x) => !x.classList.contains("on"));
+        this._updateShopCount();
+        break;
+      }
       case "shop-all": { const d = this.dialog; d.off = el.dataset.on === "1" ? new Set() : new Set(this._shopItems(d).filter((i) => i.name).map((i) => i.idx)); this.render(); break; }
       case "shop-serv": this.dialog.servings = Math.max(1, Math.min(100, this.dialog.servings + Number(el.dataset.d))); this.render(); break;
       case "shop-serv-set": this.dialog.servings = Number(el.dataset.n); this.render(); break;
