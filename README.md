@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.5.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.6.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -12,7 +12,7 @@ Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in de
 - **Kategorien verwalten** in den Einstellungen: Haupt- und Unterkategorien hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
-- **Bring!-Anbindung**: in den Einstellungen mit dem Bring!-Konto anmelden und die Liste wählen; im Rezept „Zu Bring! hinzufügen“ zeigt alle Zutaten, ihr wählt ab, was daheim ist, der Rest landet in Bring!
+- **Bring!-Anbindung**: in den Einstellungen mit dem Bring!-Konto anmelden und die Liste wählen; im Rezept „Zu Bring! hinzufügen“ fragt zuerst nach der Personenzahl, rechnet die Mengen um und zeigt alle Zutaten; ihr wählt ab, was daheim ist, der Rest landet in Bring!
 - **Einkaufsliste in Home Assistant** (To-do-Liste) als Alternative oder zusätzlich
 - **Zubereitung in zwei Teilen**: Vorbereitung (schneiden, abwiegen …) und Kochen, jeweils mit eigener Zeit
 - **Kochmodus**: ein Schritt pro Bildschirm in großer Schrift, Bildschirm bleibt an, Zutaten daneben
@@ -63,6 +63,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.6.0 | Einkaufen: erst Personenzahl wählen, dann umgerechnete Zutaten; Kategorie-Symbol statt Farbpunkt in Titel und Pfad |
 | 1.5.0 | Unterkategorien (eine Ebene); neue Standard-Kategorien Kuchen und Plätzchen unter Backen sowie Salat; Einstellungen zeigen Kategorien als Baum |
 | 1.4.1 | Handy: Kopfzeile der Rezeptansicht passt wieder aufs Display |
 | 1.4.0 | Bring!-Anbindung mit Anmeldung und Listenauswahl; Auswahl-Dialog vor dem Hinzufügen der Zutaten; Einstellungen in einklappbaren Bereichen |

@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.5.0";
+const KB_VERSION = "1.6.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -608,6 +608,28 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
 .shop-item:not(.on) .nm, .shop-item:not(.on) .sp { opacity: .45; text-decoration: line-through; }
 .shop-item .sp { color: var(--kb-ink-soft); font-size: 14px; text-align: right; }
 
+.crumb-icon { --mdc-icon-size: 18px; margin-right: 6px; flex: none; }
+.crumbs button.crumb-cat { gap: 0; }
+.crumbs .here .crumb-icon { margin-right: 6px; }
+.cat-title { display: inline-flex !important; align-items: center; gap: 16px; }
+.cat-badge { width: 1.15em; height: 1.15em; border-radius: 0.3em; background: var(--c); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.cat-badge ha-icon { --mdc-icon-size: 0.7em; width: 0.7em; height: 0.7em; }
+/* Einkaufen: Personenzahl */
+.serv-pick { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 10px 0 4px; }
+.serv-big { display: flex; align-items: center; gap: 22px; }
+.serv-big button { width: 60px; height: 60px; border-radius: 999px; border: 2px solid var(--kb-line); background: var(--kb-surface); display: inline-flex; align-items: center; justify-content: center; }
+.serv-big button:hover { border-color: var(--kb-herb); }
+.serv-big button ha-icon { --mdc-icon-size: 28px; }
+.serv-num { text-align: center; min-width: 120px; }
+.serv-num b { display: block; font-family: var(--kb-display); font-size: 64px; font-weight: 800; line-height: 1; color: var(--kb-ink); }
+.serv-num small { color: var(--kb-ink-soft); font-size: 16px; }
+.serv-quick { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.serv-quick button { min-width: 48px; height: 40px; border-radius: 999px; border: 1.5px solid var(--kb-line); background: var(--kb-paper); font-weight: 700; }
+.serv-quick button.on { background: var(--kb-herb); border-color: var(--kb-herb); color: #fff; }
+:host([dark]) .serv-quick button.on { color: #0E1A15; }
+.serv-note { color: var(--kb-ink-soft); font-size: 14px; margin: 0; text-align: center; }
+.shop-for { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--kb-ink); }
+
 /* Dialoge */
 .scrim {
   position: fixed; inset: 0; z-index: 20; background: rgba(10,18,14,.5); display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -1021,7 +1043,7 @@ class KochbuchPanel extends HTMLElement {
     const c = this._cat(this.filter);
     const parent = this._parentOf(c);
     const sep = `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span>`;
-    const crumbs = this._crumbs(`${parent ? `${sep}<button class="crumb-cat" data-action="cat" data-id="${esc(parent.id)}"><span class="title-dot" style="background:${esc(parent.color)}"></span>${esc(parent.name)}</button>` : ""}${sep}<span class="here">${c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>` : ""}${esc(this._filterName(this.filter))}</span>`);
+    const crumbs = this._crumbs(`${parent ? `${sep}<button class="crumb-cat" data-action="cat" data-id="${esc(parent.id)}"><ha-icon class="crumb-icon" icon="${esc(parent.icon)}" style="color:${esc(parent.color)}"></ha-icon>${esc(parent.name)}</button>` : ""}${sep}<span class="here">${c ? `<ha-icon class="crumb-icon" icon="${esc(c.icon)}" style="color:${esc(c.color)}"></ha-icon>` : ""}${esc(this._filterName(this.filter))}</span>`);
     const subs = c && !parent ? this._subs(c.id) : [];
     const subTiles = subs.length ? `<section class="sub-shelf" aria-label="Unterkategorien">${subs.map((x) => {
       const n = this.recipes.filter((r) => r.category === x.id).length;
@@ -1034,7 +1056,7 @@ class KochbuchPanel extends HTMLElement {
       <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
     const empty = !this._filtered().length && !this.search.trim();
     return `${header}<main>
-      <h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${esc(this._filterName(this.filter))}</h1>
+      <h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${c ? `<span class="cat-badge"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>` : ""}${esc(this._filterName(this.filter))}</h1>
       ${subTiles}
       ${subs.length && !empty ? `<h2 class="sec-title small">Alle Rezepte in ${esc(c.name)}</h2>` : ""}
       ${empty ? "" : this._toolbar(c && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}" title="Kategorie exportieren" aria-label="Kategorie exportieren"><ha-icon icon="mdi:export-variant"></ha-icon><span class="lbl">Kategorie exportieren</span></button>` : "")}
@@ -1097,7 +1119,7 @@ class KochbuchPanel extends HTMLElement {
     const cookedN = (r.cooked || []).length;
 
     const header = this._top("top-detail", `
-      ${this._crumbs([this._parentOf(c), c].filter(Boolean).map((x) => `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(x.id)}"><span class="title-dot" style="background:${esc(x.color)}"></span>${esc(x.name)}</button>`).join(""))}
+      ${this._crumbs([this._parentOf(c), c].filter(Boolean).map((x) => `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(x.id)}"><ha-icon class="crumb-icon" icon="${esc(x.icon)}" style="color:${esc(x.color)}"></ha-icon>${esc(x.name)}</button>`).join(""))}
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
       <button class="icon-btn" data-action="export-recipe" data-id="${esc(r.id)}" aria-label="Rezept exportieren" title="Rezept exportieren"><ha-icon icon="mdi:export-variant"></ha-icon></button>
@@ -1703,17 +1725,36 @@ class KochbuchPanel extends HTMLElement {
         <textarea class="inp" id="paste-text" placeholder="Für den Teig:\n250 g Mehl\n2 Eier\n1 Prise Salz"></textarea>
         <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn primary" data-action="paste-go"><ha-icon icon="mdi:check"></ha-icon>Übernehmen</button></div>`;
     } else if (d.type === "shop") {
-      const both = this._bringReady() && this._todoTarget();
-      const n = d.items.filter((i) => i.name && i.on).length;
-      const total = d.items.filter((i) => i.name).length;
-      const label = d.target === "bring" ? "zu Bring! hinzufügen" : "auf die Einkaufsliste";
-      inner = `<h2>Was fehlt noch?</h2><p>Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Bring!-Liste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : "auf die Einkaufsliste"}.</p>
-        ${both ? `<div class="seg"><button class="${d.target === "bring" ? "on" : ""}" data-action="shop-target" data-t="bring">Bring!</button><button class="${d.target === "todo" ? "on" : ""}" data-action="shop-target" data-t="todo">Home Assistant</button></div>` : ""}
-        <div class="shop-head"><span>${n} von ${total} ausgewählt</span><span><button class="linkish" data-action="shop-all" data-on="1">Alle</button><button class="linkish" data-action="shop-all" data-on="0">Keine</button></span></div>
-        <ul class="shop-list">${d.items.map((it, i) => it.group ? `<li class="shop-group">${esc(it.group)}</li>`
-          : `<li class="shop-item ${it.on ? "on" : ""}" data-action="shop-toggle" data-i="${i}" role="checkbox" aria-checked="${it.on}" tabindex="0"><span class="box">${it.on ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : ""}</span><span class="nm">${esc(it.name)}</span><span class="sp">${esc(it.spec)}</span></li>`).join("")}</ul>
-        ${d.error ? `<p style="color:var(--kb-tomato);margin:10px 0 0">${esc(d.error)}</p>` : ""}
-        <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn ${d.target === "bring" ? "bring" : "primary"}" data-action="shop-go" ${n && !d.busy ? "" : "disabled"}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird gesendet` : `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${label}`}</button></div>`;
+      const r = this._recipe(d.recipeId);
+      const word = this._servWord(r, d.servings);
+      if (d.step === "servings") {
+        const quick = [...new Set([1, 2, 3, 4, 6, 8, r.servings])].sort((a, b) => a - b);
+        inner = `<h2>Für wie viele ${/^Person/.test(word) ? "Personen" : esc(word)} kocht ihr?</h2>
+          <p>Die Mengen werden danach passend umgerechnet. Das Rezept ist für ${r.servings} ${esc(this._servWord(r, r.servings))} geschrieben.</p>
+          <div class="serv-pick">
+            <div class="serv-big">
+              <button data-action="shop-serv" data-d="-1" aria-label="Weniger" ${d.servings <= 1 ? "disabled" : ""}><ha-icon icon="mdi:minus"></ha-icon></button>
+              <div class="serv-num" aria-live="polite"><b>${d.servings}</b><small>${esc(word)}</small></div>
+              <button data-action="shop-serv" data-d="1" aria-label="Mehr"><ha-icon icon="mdi:plus"></ha-icon></button>
+            </div>
+            <div class="serv-quick">${quick.map((n) => `<button class="${n === d.servings ? "on" : ""}" data-action="shop-serv-set" data-n="${n}">${n}</button>`).join("")}</div>
+          </div>
+          <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn primary" data-action="shop-next"><ha-icon icon="mdi:arrow-right"></ha-icon>Weiter zu den Zutaten</button></div>`;
+      } else {
+        const items = this._shopItems(d);
+        const both = this._bringReady() && this._todoTarget();
+        const n = items.filter((i) => i.name && i.on).length;
+        const total = items.filter((i) => i.name).length;
+        const label = d.target === "bring" ? "zu Bring! hinzufügen" : "auf die Einkaufsliste";
+        inner = `<h2>Was fehlt noch?</h2>
+          <p>Mengen <button class="linkish shop-for" data-action="shop-back"><ha-icon icon="mdi:account-group-outline" style="--mdc-icon-size:18px"></ha-icon>für ${d.servings} ${esc(word)} (ändern)</button>. Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Bring!-Liste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : "auf die Einkaufsliste"}.</p>
+          ${both ? `<div class="seg"><button class="${d.target === "bring" ? "on" : ""}" data-action="shop-target" data-t="bring">Bring!</button><button class="${d.target === "todo" ? "on" : ""}" data-action="shop-target" data-t="todo">Home Assistant</button></div>` : ""}
+          <div class="shop-head"><span>${n} von ${total} ausgewählt</span><span><button class="linkish" data-action="shop-all" data-on="1">Alle</button><button class="linkish" data-action="shop-all" data-on="0">Keine</button></span></div>
+          <ul class="shop-list">${items.map((it) => it.group ? `<li class="shop-group">${esc(it.group)}</li>`
+            : `<li class="shop-item ${it.on ? "on" : ""}" data-action="shop-toggle" data-i="${it.idx}" role="checkbox" aria-checked="${it.on}" tabindex="0"><span class="box">${it.on ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : ""}</span><span class="nm">${esc(it.name)}</span><span class="sp">${esc(it.spec)}</span></li>`).join("")}</ul>
+          ${d.error ? `<p style="color:var(--kb-tomato);margin:10px 0 0">${esc(d.error)}</p>` : ""}
+          <div class="row"><button class="btn" data-action="shop-back"><ha-icon icon="mdi:arrow-left"></ha-icon>Zurück</button><button class="btn ${d.target === "bring" ? "bring" : "primary"}" data-action="shop-go" ${n && !d.busy ? "" : "disabled"}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird gesendet` : `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${label}`}</button></div>`;
+      }
     } else if (d.type === "restore") {
       inner = `<h2>Sicherung einspielen</h2><p>„${esc(d.file.name)}“ (${(d.file.size / 1048576).toFixed(1).replace(".", ",")} MB). Sollen die Rezepte zu den vorhandenen dazukommen oder das Kochbuch komplett ersetzen? Beim Ersetzen gehen alle Rezepte verloren, die nicht in der Sicherung sind.</p>
         ${d.busy ? `<p style="display:flex;align-items:center;gap:10px"><span class="spin"></span>Wird eingespielt …</p>` : ""}
@@ -1759,21 +1800,33 @@ class KochbuchPanel extends HTMLElement {
 
   _openShop() {
     const r = this._recipe(this.view.id);
-    const factor = (this.servings || r.servings) / (r.servings || 1);
+    const target = this._bringReady() ? "bring" : "todo";
+    if (target === "todo" && !this._todoTarget()) { this._showToast("Keine Einkaufsliste eingerichtet – meldet euch in den Einstellungen bei Bring! an.", true); return; }
+    this.dialog = { type: "shop", step: "servings", recipeId: r.id, servings: this.servings || r.servings, off: new Set(this.checked), target };
+    this.render();
+  }
+
+  _shopItems(d) {
+    const r = this._recipe(d.recipeId);
+    if (!r) return [];
+    const factor = d.servings / (r.servings || 1);
     const items = [];
     (r.ingredients || []).forEach((i, idx) => {
       if (!i.name) { if (i.group) items.push({ group: i.group }); return; }
-      items.push({ idx, name: i.name, spec: [scaleAmount(i.amount, factor), i.unit].filter(Boolean).join(" "), on: !this.checked.has(idx) });
+      items.push({ idx, name: i.name, spec: [scaleAmount(i.amount, factor), i.unit].filter(Boolean).join(" "), on: !d.off.has(idx) });
     });
-    const target = this._bringReady() ? "bring" : "todo";
-    if (target === "todo" && !this._todoTarget()) { this._showToast("Keine Einkaufsliste eingerichtet – meldet euch in den Einstellungen bei Bring! an.", true); return; }
-    this.dialog = { type: "shop", items, target };
-    this.render();
+    return items;
+  }
+
+  _servWord(r, n) {
+    const u = (r.servings_unit || "Portionen").trim();
+    if (/^(portion|person)/i.test(u)) return n === 1 ? "Person" : "Personen";
+    return u;
   }
 
   async _sendShop() {
     const d = this.dialog;
-    const items = d.items.filter((i) => i.name && i.on);
+    const items = this._shopItems(d).filter((i) => i.name && i.on);
     if (!items.length) return;
     this.dialog = { ...d, busy: true }; this.render();
     try {
@@ -1891,8 +1944,12 @@ class KochbuchPanel extends HTMLElement {
       case "serv": { const r = this._recipe(this.view.id); this.servings = Math.max(1, (this.servings || r.servings) + Number(el.dataset.d)); this.render(); break; }
       case "check": { if (this.checked.has(idx)) this.checked.delete(idx); else this.checked.add(idx); this.render(); break; }
       case "shop": this._openShop(); break;
-      case "shop-toggle": { const it = this.dialog.items[Number(el.dataset.i)]; it.on = !it.on; this.render(); break; }
-      case "shop-all": { const on = el.dataset.on === "1"; this.dialog.items.forEach((i) => { if (i.name) i.on = on; }); this.render(); break; }
+      case "shop-toggle": { const k = Number(el.dataset.i); const off = this.dialog.off; if (off.has(k)) off.delete(k); else off.add(k); this._focusSel = `.shop-item[data-i="${k}"]`; this.render(); break; }
+      case "shop-all": { const d = this.dialog; d.off = el.dataset.on === "1" ? new Set() : new Set(this._shopItems(d).filter((i) => i.name).map((i) => i.idx)); this.render(); break; }
+      case "shop-serv": this.dialog.servings = Math.max(1, Math.min(100, this.dialog.servings + Number(el.dataset.d))); this.render(); break;
+      case "shop-serv-set": this.dialog.servings = Number(el.dataset.n); this.render(); break;
+      case "shop-next": this.dialog.step = "list"; this.servings = this.dialog.servings; this.render(); break;
+      case "shop-back": this.dialog.step = "servings"; this.dialog.error = null; this.render(); break;
       case "shop-target": this.dialog.target = el.dataset.t; this.render(); break;
       case "shop-go": this._sendShop(); break;
       case "fold": this._readSettings(); if (this.folds.has(id)) this.folds.delete(id); else this.folds.add(id); try { localStorage.setItem("kochbuch-folds", JSON.stringify([...this.folds])); } catch (e) { /* egal */ } this.render(); break;
