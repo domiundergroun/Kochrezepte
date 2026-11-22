@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.7.3";
+const KB_VERSION = "1.7.4";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -1110,7 +1110,6 @@ class KochbuchPanel extends HTMLElement {
         <ha-icon class="bg" icon="${esc(c.icon)}"></ha-icon>
         ${pics.length ? `<span class="thumbs">${pics.map((r) => `<img src="${esc(r.image)}" alt="" loading="lazy">`).join("")}</span>` : ""}
         <span class="ct-name">${esc(c.name)}</span>
-        ${subs.length ? `<span class="ct-subs">${subs.map((x) => esc(x.name)).join(", ")}</span>` : ""}
         <span class="ct-count">${list.length ? `${list.length} ${list.length === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</span>
       </button>`;
     }).join("");
