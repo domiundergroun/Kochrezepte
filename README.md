@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.4.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.4.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -62,6 +62,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.4.1 | Handy: Kopfzeile der Rezeptansicht passt wieder aufs Display |
 | 1.4.0 | Bring!-Anbindung mit Anmeldung und Listenauswahl; Auswahl-Dialog vor dem Hinzufügen der Zutaten; Einstellungen in einklappbaren Bereichen |
 | 1.3.0 | Zubereitung getrennt in Vorbereitung und Kochen; Rezepte exportieren/importieren (einzeln, Kategorie, alle); Sicherung als ZIP mit Fotos; automatisches Backup per FTP aufs Netzwerklaufwerk |
 | 1.2.0 | Startseite zeigt nur noch die Kategorien; Reiterleiste ersetzt durch „Kochbuch › Kategorie“ zum Zurückspringen; Kategorie beim Rezept ist Pflicht; beim Löschen einer Kategorie wählt ihr, wohin die Rezepte wandern |

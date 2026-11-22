@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.4.0";
+const KB_VERSION = "1.4.1";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -672,6 +672,9 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .f { grid-column: span 2; }
   .irow { grid-template-columns: 24px 62px 74px 1fr 36px; gap: 6px; }
   .crumbs button { font-size: 18px; padding: 0 8px; }
+  .top.top-detail { gap: 2px; }
+  .top.top-detail .crumbs button span, .top.top-detail [data-action=print] { display: none; }
+  .top.top-detail .btn { padding: 0 11px; }
   .crumbs .sep, .crumbs .here, .crumbs .crumb-cat { display: none; }
   .cat-title { font-size: 30px; margin-top: 8px; }
   .savebar { padding-left: 14px; padding-right: 14px; }
@@ -1044,7 +1047,7 @@ class KochbuchPanel extends HTMLElement {
     const factor = servings / (r.servings || 1);
     const cookedN = (r.cooked || []).length;
 
-    const header = this._top("", `
+    const header = this._top("top-detail", `
       ${this._crumbs(c ? `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(c.id)}"><span class="title-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</button>` : "")}
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
