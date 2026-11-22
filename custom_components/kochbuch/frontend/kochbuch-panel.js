@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.6.2";
+const KB_VERSION = "1.7.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -509,6 +509,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .sub-tile > span:nth-child(2) { flex: 1; min-width: 0; }
 .sub-tile .go { color: var(--kb-ink-soft); }
 .sec-title.small { font-size: 20px; margin-top: 26px; }
+.cat-sub { margin: 8px 0 0; color: var(--kb-ink-soft); font-size: 16px; }
+.fav-tile .sub-icon { background: var(--kb-tomato); }
 .cat-group { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
 .cat-group + .cat-group { border-top: 1px dashed var(--kb-line); padding-top: 10px; }
 .cat-row { grid-template-columns: 44px 44px 1fr auto !important; grid-template-areas: "color prev name order" ". . icon parent"; }
@@ -783,7 +785,12 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .cat-row.sub { margin-left: 18px; }
   .cat-row.sub::before { left: -14px; width: 8px; }
   .add-sub { margin-left: 18px; }
-  .sub-shelf { grid-template-columns: 1fr; }
+  .sub-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+  .sub-tile { padding: 10px; gap: 10px; border-left-width: 4px; border-radius: 14px; }
+  .sub-tile .sub-icon { width: 38px; height: 38px; border-radius: 11px; }
+  .sub-tile b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub-tile small { font-size: 12.5px; }
+  .sub-tile .go { display: none; }
   .crumbs button { font-size: 18px; padding: 0 8px; }
   .top.top-detail { gap: 2px; }
   .top.top-detail .crumbs button span, .top.top-detail [data-action=print] { display: none; }
@@ -906,11 +913,14 @@ class KochbuchPanel extends HTMLElement {
     const path = (this._route && this._route.path) || "";
     const parts = path.split("/").filter(Boolean);
     let view = { name: "home" };
+    if (!parts.length) { this.filter = "all"; this.favOnly = false; }
     if (parts[0] === "kategorie" && parts[1]) {
-      view = { name: "list", id: parts[1] };
+      const favOnly = parts[2] === "favoriten";
+      view = { name: "list", id: parts[1] + (favOnly ? "/fav" : "") };
       const f = { alle: "all", favoriten: "fav", ohne: "none" }[parts[1]] || decodeURIComponent(parts[1]);
-      if (f !== this.filter) this.search = "";
+      if (f !== this.filter || favOnly !== this.favOnly) this.search = "";
       this.filter = f;
+      this.favOnly = favOnly;
     } else if (parts[0] === "rezept" && parts[1]) view = { name: "detail", id: parts[1] };
     else if (parts[0] === "neu") view = { name: "edit", id: null };
     else if (parts[0] === "bearbeiten" && parts[1]) view = { name: "edit", id: parts[1] };
@@ -1035,7 +1045,7 @@ class KochbuchPanel extends HTMLElement {
   _filtered(filter = this.filter) {
     const q = this.search.trim().toLowerCase();
     let list = this.recipes.filter((r) => {
-      if (filter === "fav" && !r.favorite) return false;
+      if ((filter === "fav" || (this.favOnly && filter === this.filter)) && !r.favorite) return false;
       if (filter === "none" && r.category && this._cat(r.category)) return false;
       if (!["all", "fav", "none"].includes(filter) && !this._family(filter).has(r.category)) return false;
       if (!q) return true;
@@ -1116,30 +1126,46 @@ class KochbuchPanel extends HTMLElement {
   _renderList() {
     const c = this._cat(this.filter);
     const parent = this._parentOf(c);
+    const fav = this.favOnly && !!c;
     const sep = `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span>`;
-    const crumbs = this._crumbs(`${parent ? `${sep}<button class="crumb-cat" data-action="cat" data-id="${esc(parent.id)}"><ha-icon class="crumb-icon" icon="${esc(parent.icon)}" style="color:${esc(parent.color)}"></ha-icon>${esc(parent.name)}</button>` : ""}${sep}<span class="here">${c ? `<ha-icon class="crumb-icon" icon="${esc(c.icon)}" style="color:${esc(c.color)}"></ha-icon>` : ""}${esc(this._filterName(this.filter))}</span>`);
-    const subs = c && !parent ? this._subs(c.id) : [];
-    const subTiles = subs.length ? `<section class="sub-shelf" aria-label="Unterkategorien">${subs.map((x) => {
+    const crumbCat = (x) => `${sep}<button class="crumb-cat" data-action="cat" data-id="${esc(x.id)}"><ha-icon class="crumb-icon" icon="${esc(x.icon)}" style="color:${esc(x.color)}"></ha-icon>${esc(x.name)}</button>`;
+    const here = fav
+      ? `${sep}<span class="here"><ha-icon class="crumb-icon" icon="mdi:heart" style="color:var(--kb-tomato)"></ha-icon>Favoriten</span>`
+      : `${sep}<span class="here">${c ? `<ha-icon class="crumb-icon" icon="${esc(c.icon)}" style="color:${esc(c.color)}"></ha-icon>` : ""}${esc(this._filterName(this.filter))}</span>`;
+    const crumbs = this._crumbs(`${parent ? crumbCat(parent) : ""}${fav ? crumbCat(c) : ""}${here}`);
+    const fam = c ? this._family(c.id) : new Set();
+    const favCount = c ? this.recipes.filter((r) => r.favorite && fam.has(r.category)).length : 0;
+    const subs = c && !parent && !fav ? this._subs(c.id) : [];
+    const favTile = c && !fav ? `<button class="sub-tile fav-tile" style="--c:var(--kb-tomato)" data-action="cat-fav" data-id="${esc(c.id)}"><span class="sub-icon"><ha-icon icon="mdi:heart"></ha-icon></span><span><b>Favoriten</b><small>${favCount ? `${favCount} ${favCount === 1 ? "Rezept" : "Rezepte"}` : "Noch keine"}</small></span><ha-icon class="go" icon="mdi:chevron-right"></ha-icon></button>` : "";
+    const subTiles = favTile || subs.length ? `<section class="sub-shelf" aria-label="Unterkategorien">${favTile}${subs.map((x) => {
       const n = this.recipes.filter((r) => r.category === x.id).length;
       return `<button class="sub-tile" style="--c:${esc(x.color)}" data-action="cat" data-id="${esc(x.id)}"><span class="sub-icon"><ha-icon icon="${esc(x.icon)}"></ha-icon></span><span><b>${esc(x.name)}</b><small>${n ? `${n} ${n === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</small></span><ha-icon class="go" icon="mdi:chevron-right"></ha-icon></button>`;
     }).join("")}</section>` : "";
+    const placeholder = fav ? `Favoriten in ${esc(c.name)} suchen` : `In ${esc(this._filterName(this.filter))} suchen`;
     const header = this._top("list", `${crumbs}<div class="spacer"></div>
-      <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="In ${esc(this._filterName(this.filter))} suchen" value="${esc(this.search)}" aria-label="Suchen"></label>
+      <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="${placeholder}" value="${esc(this.search)}" aria-label="Suchen"></label>
       <button class="icon-btn" data-action="import" title="Rezepte importieren" aria-label="Rezepte importieren"><ha-icon icon="mdi:tray-arrow-down"></ha-icon></button>
       <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
       <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
     const empty = !this._filtered().length && !this.search.trim();
+    const title = fav
+      ? `<h1 class="cat-title" style="--c:var(--kb-tomato)"><span class="cat-badge"><ha-icon icon="mdi:heart"></ha-icon></span>Favoriten</h1><p class="cat-sub">aus ${esc(this._catLabel(c))}</p>`
+      : `<h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${c ? `<span class="cat-badge"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>` : ""}${esc(this._filterName(this.filter))}</h1>`;
     return `${header}<main>
-      <h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${c ? `<span class="cat-badge"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>` : ""}${esc(this._filterName(this.filter))}</h1>
+      ${title}
       ${subTiles}
-      ${subs.length && !empty ? `<h2 class="sec-title small">Alle Rezepte in ${esc(c.name)}</h2>` : ""}
-      ${empty ? "" : this._toolbar(c && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}" title="Kategorie exportieren" aria-label="Kategorie exportieren"><ha-icon icon="mdi:export-variant"></ha-icon><span class="lbl">Kategorie exportieren</span></button>` : "")}
+      ${subTiles && !empty ? `<h2 class="sec-title small">Alle Rezepte in ${esc(c.name)}</h2>` : ""}
+      ${empty ? "" : this._toolbar(c && !fav && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}" title="Kategorie exportieren" aria-label="Kategorie exportieren"><ha-icon icon="mdi:export-variant"></ha-icon><span class="lbl">Kategorie exportieren</span></button>` : "")}
       <section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>
     </main>`;
   }
 
   _emptyCategory() {
     const c = this._cat(this.filter);
+    if (this.favOnly && c) {
+      return `<div class="empty" style="grid-column:1/-1"><div class="plate" style="color:var(--kb-tomato)"><ha-icon icon="mdi:heart-outline"></ha-icon></div>
+        <h2>Noch keine Favoriten in ${esc(c.name)}</h2><p>Tippt bei einem Rezept auf das Herz, dann erscheint es hier.</p></div>`;
+    }
     const what = this.filter === "fav" ? "Noch keine Favoriten. Tippt bei einem Rezept auf das Herz." : `In „${esc(this._filterName(this.filter))}“ gibt es noch kein Rezept.`;
     return `<div class="empty" style="grid-column:1/-1"><div class="plate" ${c ? `style="color:${esc(c.color)}"` : ""}><ha-icon icon="${esc(c ? c.icon : this.filter === "fav" ? "mdi:heart-outline" : "mdi:chef-hat")}"></ha-icon></div>
       <h2>${what}</h2>${this.filter === "fav" ? "" : `<p>${c && this._subs(c.id).length ? "Neue Rezepte könnt ihr direkt hier oder in einer Unterkategorie anlegen." : "Das erste Rezept landet direkt in dieser Kategorie."}</p><div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button></div>`}</div>`;
@@ -1982,6 +2008,7 @@ class KochbuchPanel extends HTMLElement {
       case "filter": this._go(`kategorie/${encodeURIComponent(id)}`, true); break;
       case "cat": this._navigatedInside = true; this._go(`kategorie/${encodeURIComponent(this._slug(id))}`); break;
       case "back": this._back(); break;
+      case "cat-fav": this._navigatedInside = true; this._go(`kategorie/${encodeURIComponent(id)}/favoriten`); break;
       case "import": this.dialog = { type: "import", mode: "url" }; this._focusSel = "#import-url"; this.render(); break;
       case "import-mode": this.dialog = { type: "import", mode: el.dataset.mode }; if (el.dataset.mode === "url") this._focusSel = "#import-url"; this.render(); break;
       case "export-recipe": this._exportRecipes(`?ids=${encodeURIComponent(id)}`, "Rezept"); break;

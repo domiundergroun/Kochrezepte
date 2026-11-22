@@ -2,13 +2,14 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.6.2-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.7.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
 - **Rezepte sammeln** mit Foto, Kategorie, Schlagworten, Zeiten, Schwierigkeit, Bewertung, Zutaten (mit Zwischenüberschriften) und Arbeitsschritten
 - **Startseite mit euren Kategorien** als große Kacheln – sonst nichts. Das Kochbuch startet leer, ohne Beispielrezepte
-- **Unterkategorien**, z. B. Backen › Kuchen und Plätzchen: erscheinen als eigene Kacheln innerhalb der Hauptkategorie
+- **Kategorien mit Unterkategorien**: Vorspeisen; Hauptgericht (Nudel, Reis, Braten, Suppe, Anderes); Beilage (Salat); Backen (Kuchen, Plätzchen); Nachspeise – alles in den Einstellungen änderbar
+- **Favoriten in jeder Kategorie**: eigene Kachel „Favoriten“ in jeder Haupt- und Unterkategorie
 - **Kategorien verwalten** in den Einstellungen: Haupt- und Unterkategorien hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
@@ -63,6 +64,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.7.0 | Neue Kategorie-Struktur (Vorspeisen, Hauptgericht mit Nudel/Reis/Braten/Suppe/Anderes, Beilage mit Salat, Backen mit Kuchen/Plätzchen, Nachspeise) inkl. automatischer Umstellung bestehender Rezepte; Favoriten in jeder Kategorie |
 | 1.6.2 | Rezeptkarten überall gleich groß (lange Namen werden getrennt); Kopfzeile auf dem Handy: Suchfeld in eigener Zeile, Knöpfe brechen nicht mehr um |
 | 1.6.1 | Abgehakte Zutaten rutschen ans Ende ihrer Gruppe; beim Abhaken springt die Seite nicht mehr nach oben |
 | 1.6.0 | Einkaufen: erst Personenzahl wählen, dann umgerechnete Zutaten; Kategorie-Symbol statt Farbpunkt in Titel und Pfad |

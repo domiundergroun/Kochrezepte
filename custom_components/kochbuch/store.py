@@ -22,10 +22,9 @@ from homeassistant.helpers.storage import Store
 from .backup import DEFAULT_BACKUP, clean_backup_config, public_backup
 from .const import (
     VERSION,
-    CATEGORIES_V15,
+    CATEGORY_ALIASES_V17,
     DEFAULT_CATEGORIES,
     DEFAULT_SETTINGS,
-    OLD_DEFAULT_CATEGORY_IDS,
     IMAGES_DIR,
     IMAGES_URL,
     SIGNAL_UPDATED,
@@ -165,37 +164,41 @@ class KochbuchStore:
                 self.bring_auth = data["bring_auth"]
             if isinstance(data.get("backup"), dict):
                 self.backup = {**copy.deepcopy(DEFAULT_BACKUP), **data["backup"]}
-            cats = self.settings.get("categories") or []
-            if {c.get("id") for c in cats} == OLD_DEFAULT_CATEGORY_IDS:
-                used = {r.get("category") for r in self.recipes.values()}
-                keep = [c for c in cats if c["id"] in used and c["id"] != "backen"]
-                self.settings["categories"] = copy.deepcopy(DEFAULT_CATEGORIES) + keep
-                await self._store.async_save(self._data())
-            if not settings.get("categories_v15"):
-                cats = self.settings.setdefault("categories", [])
-                names = {c.get("name", "").lower() for c in cats}
-                ids = {c.get("id") for c in cats}
-                for cat in CATEGORIES_V15:
-                    if cat["name"].lower() in names or cat["id"] in ids:
-                        continue
-                    new = copy.deepcopy(cat)
-                    if new.get("parent") and new["parent"] not in ids:
-                        parent = next((c for c in cats if c.get("name", "").lower() == "backen"), None)
-                        if parent is None:
-                            continue
-                        new["parent"] = parent["id"]
-                    if new.get("parent"):
-                        # direkt hinter die Hauptkategorie bzw. deren letzte Unterkategorie
-                        pos = max(i for i, c in enumerate(cats) if c["id"] == new["parent"] or c.get("parent") == new["parent"])
-                        cats.insert(pos + 1, new)
-                    else:
-                        cats.append(new)
-                    ids.add(new["id"])
-                self.settings["categories_v15"] = True
+            if not settings.get("categories_v17"):
+                self._migrate_categories_v17()
                 await self._store.async_save(self._data())
         await self.hass.async_add_executor_job(
             lambda: os.makedirs(self.images_path, exist_ok=True)
         )
+
+    def _migrate_categories_v17(self) -> None:
+        """Neue Kategorie-Struktur (1.7.0); Rezepte wandern in die passende neue Kategorie."""
+        lookup: dict[str, str] = {}
+        for new_id, names in CATEGORY_ALIASES_V17.items():
+            lookup[new_id] = new_id
+            for name in names:
+                lookup[name.lower()] = new_id
+        old = self.settings.get("categories") or []
+        remap: dict[str, str] = {}
+        extra: list[dict[str, Any]] = []
+        for cat in old:
+            target = lookup.get(str(cat.get("id", "")).lower()) or lookup.get(
+                str(cat.get("name", "")).strip().lower()
+            )
+            if target:
+                remap[cat["id"]] = target
+            else:
+                extra.append(dict(cat))
+        extra_ids = {c["id"] for c in extra}
+        for cat in extra:
+            if cat.get("parent") and cat["parent"] not in extra_ids:
+                cat["parent"] = remap.get(cat["parent"], "")
+        self.settings["categories"] = normalize_categories(copy.deepcopy(DEFAULT_CATEGORIES) + extra)
+        for recipe in self.recipes.values():
+            if recipe.get("category") in remap:
+                recipe["category"] = remap[recipe["category"]]
+        self.settings["categories_v17"] = True
+        _LOGGER.info("Kochbuch: Kategorien auf neue Struktur umgestellt (%s zugeordnet)", len(remap))
 
     async def _async_save(self) -> None:
         await self._store.async_save(self._data())
