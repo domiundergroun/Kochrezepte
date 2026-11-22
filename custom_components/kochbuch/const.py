@@ -1,7 +1,7 @@
 """Konstanten für die Kochbuch-Integration."""
 
 DOMAIN = "kochbuch"
-VERSION = "1.7.2"
+VERSION = "1.7.3"
 
 STORAGE_KEY = "kochbuch.rezepte"
 STORAGE_VERSION = 1

@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.7.2";
+const KB_VERSION = "1.7.3";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -1049,7 +1049,8 @@ class KochbuchPanel extends HTMLElement {
     let list = this.recipes.filter((r) => {
       if ((filter === "fav" || (this.favOnly && filter === this.filter)) && !r.favorite) return false;
       if (filter === "none" && r.category && this._cat(r.category)) return false;
-      if (!["all", "fav", "none"].includes(filter) && !this._family(filter).has(r.category)) return false;
+      // Ohne Suche nur Rezepte direkt in diesem Ordner; die Suche umfasst auch die Unterkategorien
+      if (!["all", "fav", "none"].includes(filter) && (q ? !this._family(filter).has(r.category) : r.category !== filter)) return false;
       if (!q) return true;
       const hay = [r.title, r.description, (r.tags || []).join(" "), (r.ingredients || []).map((i) => i.name).join(" ")].join(" ").toLowerCase();
       return q.split(/\s+/).every((w) => hay.includes(w));
@@ -1160,9 +1161,9 @@ class KochbuchPanel extends HTMLElement {
     return `${header}<main>
       ${title}
       ${subTiles}
-      ${subTiles && !empty ? `<h2 class="sec-title small">Alle Rezepte in ${esc(c.name)}</h2>` : ""}
+      ${subTiles && !empty ? `<h2 class="sec-title small">${this.search.trim() ? `Gefunden in ${esc(c.name)}` : `Weitere Rezepte in ${esc(c.name)}`}</h2>` : ""}
       ${empty ? "" : this._toolbar(c && !fav && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}" title="Kategorie exportieren" aria-label="Kategorie exportieren"><ha-icon icon="mdi:export-variant"></ha-icon><span class="lbl">Kategorie exportieren</span></button>` : "")}
-      <section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>
+      ${empty && subs.length ? "" : `<section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>`}
     </main>`;
   }
 
@@ -2245,8 +2246,8 @@ class KochbuchPanel extends HTMLElement {
     if (e.target.id === "search") {
       const was = !!this.search.trim();
       this.search = e.target.value;
-      if (this.view.name === "home" && was !== !!this.search.trim()) { this._focusSel = "#search"; this.render(); return; }
       const grid = this.shadowRoot.querySelector("#grid");
+      if ((this.view.name === "home" || this.view.name === "list") && (was !== !!this.search.trim() || !grid)) { this._focusSel = "#search"; this.render(); return; }
       if (grid) grid.innerHTML = this._renderCards();
       const rc = this.shadowRoot.querySelector("#result-count");
       if (rc) rc.textContent = this._resultLabel();
