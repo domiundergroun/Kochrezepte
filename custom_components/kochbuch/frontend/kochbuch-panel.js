@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.7.1";
+const KB_VERSION = "1.7.2";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -1062,7 +1062,9 @@ class KochbuchPanel extends HTMLElement {
       rating: (a, b) => (b.rating || 0) - (a.rating || 0) || a.title.localeCompare(b.title, "de"),
       cooked: (a, b) => (b.cooked || []).length - (a.cooked || []).length,
     };
-    return list.sort(sorts[this.sort] || sorts.title);
+    // Favoriten stehen immer oben, darunter die gewählte Sortierung
+    const by = sorts[this.sort] || sorts.title;
+    return list.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) || by(a, b));
   }
 
   _slug(filter) { return { all: "alle", fav: "favoriten", none: "ohne" }[filter] || filter; }
@@ -1139,9 +1141,8 @@ class KochbuchPanel extends HTMLElement {
     const backBtn = backTo ? `<button class="icon-btn back-btn" data-action="cat" data-id="${esc(backTo.id)}" title="Zurück zu ${esc(backTo.name)}" aria-label="Zurück zu ${esc(backTo.name)}"><ha-icon icon="mdi:arrow-left"></ha-icon></button>` : "";
     const crumbs = backBtn + this._crumbs(`${fav ? crumbCat(c) : ""}${here}`);
     const fam = c ? this._family(c.id) : new Set();
-    const favCount = c ? this.recipes.filter((r) => r.favorite && fam.has(r.category)).length : 0;
     const subs = c && !parent && !fav ? this._subs(c.id) : [];
-    const favTile = c && !fav && (!parent || favCount) ? `<button class="sub-tile fav-tile" style="--c:var(--kb-tomato)" data-action="cat-fav" data-id="${esc(c.id)}"><span class="sub-icon"><ha-icon icon="mdi:heart"></ha-icon></span><span><b>Favoriten</b><small>${favCount ? `${favCount} ${favCount === 1 ? "Rezept" : "Rezepte"}` : "Noch keine"}</small></span><ha-icon class="go" icon="mdi:chevron-right"></ha-icon></button>` : "";
+    const favTile = "";
     const subTiles = favTile || subs.length ? `<section class="sub-shelf" aria-label="Unterkategorien">${favTile}${subs.map((x) => {
       const n = this.recipes.filter((r) => r.category === x.id).length;
       return `<button class="sub-tile" style="--c:${esc(x.color)}" data-action="cat" data-id="${esc(x.id)}"><span class="sub-icon"><ha-icon icon="${esc(x.icon)}"></ha-icon></span><span><b>${esc(x.name)}</b><small>${n ? `${n} ${n === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</small></span><ha-icon class="go" icon="mdi:chevron-right"></ha-icon></button>`;
