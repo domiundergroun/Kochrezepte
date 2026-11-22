@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import copy
+import io
+import json
 import logging
 import os
 import re
 import uuid
+import zipfile
 from datetime import datetime, timezone
 from typing import Any
 
@@ -15,7 +19,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
+from .backup import DEFAULT_BACKUP, clean_backup_config, public_backup
 from .const import (
+    VERSION,
     DEFAULT_CATEGORIES,
     DEFAULT_SETTINGS,
     OLD_DEFAULT_CATEGORY_IDS,
@@ -73,12 +79,14 @@ def clean_recipe(raw: dict[str, Any]) -> dict[str, Any]:
         if entry["name"] or entry["amount"] or entry["group"]:
             ingredients.append(entry)
 
-    steps = []
-    for step in raw.get("steps") or []:
-        text = step.get("text") if isinstance(step, dict) else step
-        text = _str(text, 5000)
-        if text:
-            steps.append(text)
+    def _steps(values: Any) -> list[str]:
+        out = []
+        for step in values or []:
+            text = step.get("text") if isinstance(step, dict) else step
+            text = _str(text, 5000)
+            if text:
+                out.append(text)
+        return out[:200]
 
     tags = []
     for tag in raw.get("tags") or []:
@@ -101,7 +109,8 @@ def clean_recipe(raw: dict[str, Any]) -> dict[str, Any]:
         "rating": _int(raw.get("rating"), 0, 0, 5),
         "favorite": bool(raw.get("favorite")),
         "ingredients": ingredients,
-        "steps": steps,
+        "prep_steps": _steps(raw.get("prep_steps")),
+        "steps": _steps(raw.get("steps")),
         "notes": _str(raw.get("notes"), 5000),
         "source": _str(raw.get("source"), 500),
         "author": _str(raw.get("author"), 100),
@@ -117,6 +126,14 @@ class KochbuchStore:
         self.recipes: dict[str, dict[str, Any]] = {}
         self.settings: dict[str, Any] = copy.deepcopy(DEFAULT_SETTINGS)
         self.images_path = hass.config.path(IMAGES_DIR)
+        self.backup: dict[str, Any] = copy.deepcopy(DEFAULT_BACKUP)
+
+    def _data(self) -> dict[str, Any]:
+        return {
+            "recipes": list(self.recipes.values()),
+            "settings": self.settings,
+            "backup": self.backup,
+        }
 
     async def async_load(self) -> None:
         data = await self._store.async_load()
@@ -125,22 +142,20 @@ class KochbuchStore:
             settings = data.get("settings") or {}
             for key, value in settings.items():
                 self.settings[key] = value
+            if isinstance(data.get("backup"), dict):
+                self.backup = {**copy.deepcopy(DEFAULT_BACKUP), **data["backup"]}
             cats = self.settings.get("categories") or []
             if {c.get("id") for c in cats} == OLD_DEFAULT_CATEGORY_IDS:
                 used = {r.get("category") for r in self.recipes.values()}
                 keep = [c for c in cats if c["id"] in used and c["id"] != "backen"]
                 self.settings["categories"] = copy.deepcopy(DEFAULT_CATEGORIES) + keep
-                await self._store.async_save(
-                    {"recipes": list(self.recipes.values()), "settings": self.settings}
-                )
+                await self._store.async_save(self._data())
         await self.hass.async_add_executor_job(
             lambda: os.makedirs(self.images_path, exist_ok=True)
         )
 
     async def _async_save(self) -> None:
-        await self._store.async_save(
-            {"recipes": list(self.recipes.values()), "settings": self.settings}
-        )
+        await self._store.async_save(self._data())
         async_dispatcher_send(self.hass, SIGNAL_UPDATED)
 
     # ---------------------------------------------------------------- Rezepte
@@ -271,27 +286,274 @@ class KochbuchStore:
 
         await self.hass.async_add_executor_job(_remove)
 
-    # ------------------------------------------------------------------ Backup
-    def export(self) -> dict[str, Any]:
+
+    def _image_name(self, url: str) -> str | None:
+        """Dateiname eines lokal gespeicherten Rezeptfotos."""
+        if not url or not url.startswith(IMAGES_URL + "/"):
+            return None
+        name = url[len(IMAGES_URL) + 1 :]
+        return name if _IMAGE_NAME_RE.match(name) else None
+
+    def _read_image(self, name: str) -> bytes | None:
+        try:
+            with open(os.path.join(self.images_path, name), "rb") as file:
+                return file.read()
+        except OSError:
+            return None
+
+    def _write_image(self, name: str, content: bytes) -> None:
+        os.makedirs(self.images_path, exist_ok=True)
+        path = os.path.join(self.images_path, name)
+        if not os.path.exists(path):
+            with open(path, "wb") as file:
+                file.write(content)
+
+    async def _async_cleanup_images(self) -> None:
+        used = {self._image_name(r.get("image", "")) for r in self.recipes.values()}
+
+        def _cleanup() -> None:
+            try:
+                names = os.listdir(self.images_path)
+            except OSError:
+                return
+            for name in names:
+                if _IMAGE_NAME_RE.match(name) and name not in used:
+                    try:
+                        os.remove(os.path.join(self.images_path, name))
+                    except OSError:
+                        pass
+
+        await self.hass.async_add_executor_job(_cleanup)
+
+    # ------------------------------------------------- Rezepte austauschen
+    async def async_export_recipes(
+        self, ids: list[str] | None = None, category: str | None = None
+    ) -> dict[str, Any]:
+        """Rezepte samt Fotos als teilbare Datei."""
+        recipes = self.list()
+        if ids:
+            recipes = [r for r in recipes if r["id"] in ids]
+        if category:
+            recipes = [r for r in recipes if r.get("category") == category]
+        used_cats = {r.get("category") for r in recipes}
+        cats = [c for c in self.settings.get("categories", []) if c["id"] in used_cats]
+
+        def _build() -> list[dict[str, Any]]:
+            out = []
+            for recipe in recipes:
+                item = {k: v for k, v in recipe.items() if k not in ("id", "cooked", "created_by")}
+                name = self._image_name(recipe.get("image", ""))
+                if name:
+                    content = self._read_image(name)
+                    item["image"] = ""
+                    if content:
+                        ext = name.rsplit(".", 1)[1]
+                        mime = "image/jpeg" if ext == "jpg" else f"image/{ext}"
+                        item["image_data"] = {
+                            "mime": mime,
+                            "data": base64.b64encode(content).decode(),
+                        }
+                out.append(item)
+            return out
+
         return {
-            "kochbuch_backup": 1,
+            "format": "kochbuch-rezepte",
+            "version": 1,
+            "app_version": VERSION,
+            "exported": _now(),
+            "categories": cats,
+            "recipes": await self.hass.async_add_executor_job(_build),
+        }
+
+    async def async_import_recipes(
+        self, data: dict[str, Any], user_name: str = ""
+    ) -> dict[str, int]:
+        """Rezepte aus einer Export-Datei als neue Rezepte übernehmen."""
+        if not isinstance(data, dict) or data.get("format") != "kochbuch-rezepte":
+            raise ValueError(
+                "Das ist keine Rezept-Datei des Kochbuchs. Sicherungen spielt ihr unter "
+                "Einstellungen › Sicherung ein."
+            )
+        recipes = data.get("recipes")
+        if not isinstance(recipes, list):
+            raise ValueError("Die Datei enthält keine Rezepte")
+
+        local = self.settings.setdefault("categories", [])
+        mapping: dict[str, str] = {}
+        new_cats = 0
+        for cat in data.get("categories") or []:
+            if not isinstance(cat, dict) or not _str(cat.get("name")):
+                continue
+            cid = _str(cat.get("id"), 60)
+            same_id = next((c for c in local if c["id"] == cid), None)
+            same_name = next(
+                (c for c in local if c["name"].lower() == _str(cat["name"]).lower()), None
+            )
+            if same_name:
+                mapping[cid] = same_name["id"]
+            elif same_id:
+                mapping[cid] = same_id["id"]
+            else:
+                new_id = cid if cid and not same_id else uuid.uuid4().hex[:8]
+                local.append(
+                    {
+                        "id": new_id,
+                        "name": _str(cat.get("name"), 60),
+                        "icon": _str(cat.get("icon"), 60) or "mdi:food",
+                        "color": _str(cat.get("color"), 20) or "#2F5D50",
+                    }
+                )
+                mapping[cid] = new_id
+                new_cats += 1
+        fallback = local[0]["id"] if local else ""
+        valid = {c["id"] for c in local}
+
+        imported = skipped = 0
+        for raw in recipes:
+            if not isinstance(raw, dict):
+                continue
+            cleaned = clean_recipe(raw)
+            cat = mapping.get(cleaned["category"], cleaned["category"])
+            cleaned["category"] = cat if cat in valid else fallback
+            exists = any(
+                r["title"].lower() == cleaned["title"].lower()
+                and r.get("category") == cleaned["category"]
+                for r in self.recipes.values()
+            )
+            if exists:
+                skipped += 1
+                continue
+            image = raw.get("image_data")
+            cleaned["image"] = cleaned["image"] if cleaned["image"].startswith("http") else ""
+            if isinstance(image, dict) and image.get("data"):
+                try:
+                    cleaned["image"] = await self.async_store_image(
+                        image["data"], image.get("mime", "image/jpeg")
+                    )
+                except (ValueError, binascii.Error):
+                    cleaned["image"] = ""
+            recipe_id = uuid.uuid4().hex
+            self.recipes[recipe_id] = {
+                **cleaned,
+                "id": recipe_id,
+                "created": _now(),
+                "updated": _now(),
+                "created_by": user_name,
+                "cooked": [],
+            }
+            imported += 1
+        await self._async_save()
+        return {"imported": imported, "skipped": skipped, "categories": new_cats}
+
+    # ------------------------------------------------------------- Sicherung
+    def backup_payload(self) -> dict[str, Any]:
+        return {
+            "format": "kochbuch-backup",
+            "version": 2,
+            "app_version": VERSION,
             "exported": _now(),
             "settings": self.settings,
             "recipes": list(self.recipes.values()),
         }
 
-    async def async_import(self, data: dict[str, Any], replace: bool) -> int:
-        recipes = data.get("recipes")
-        if not isinstance(recipes, list):
-            raise ValueError("Keine gültige Kochbuch-Sicherung")
+    async def async_build_backup(self) -> bytes:
+        """Komplette Sicherung als ZIP (Rezepte, Einstellungen, Fotos)."""
+        payload = copy.deepcopy(self.backup_payload())
+        names = {self._image_name(r.get("image", "")) for r in self.recipes.values()}
+        names.discard(None)
+
+        def _build() -> bytes:
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr(
+                    "kochbuch.json", json.dumps(payload, ensure_ascii=False, indent=2)
+                )
+                for name in sorted(names):
+                    content = self._read_image(name)
+                    if content:
+                        archive.writestr(f"bilder/{name}", content, zipfile.ZIP_STORED)
+            return buffer.getvalue()
+
+        return await self.hass.async_add_executor_job(_build)
+
+    @staticmethod
+    def read_backup_file(path: str) -> tuple[dict[str, Any], dict[str, bytes]]:
+        """Liest eine Sicherung (ZIP oder ältere JSON-Datei). Blockierend."""
+        with open(path, "rb") as file:
+            head = file.read(2)
+        images: dict[str, bytes] = {}
+        if head == b"PK":
+            try:
+                with zipfile.ZipFile(path) as archive:
+                    if "kochbuch.json" not in archive.namelist():
+                        raise ValueError("In der ZIP-Datei fehlt kochbuch.json")
+                    data = json.loads(archive.read("kochbuch.json").decode("utf-8"))
+                    for info in archive.infolist():
+                        name = info.filename.rsplit("/", 1)[-1]
+                        if info.filename.startswith("bilder/") and _IMAGE_NAME_RE.match(name):
+                            if info.file_size <= MAX_IMAGE_BYTES:
+                                images[name] = archive.read(info)
+            except zipfile.BadZipFile as err:
+                raise ValueError("Die ZIP-Datei ist beschädigt") from err
+        else:
+            try:
+                with open(path, encoding="utf-8") as file:
+                    data = json.load(file)
+            except (UnicodeDecodeError, json.JSONDecodeError) as err:
+                raise ValueError("Die Datei ist keine Kochbuch-Sicherung") from err
+        if not isinstance(data, dict) or not isinstance(data.get("recipes"), list) or not (
+            data.get("format") == "kochbuch-backup" or data.get("kochbuch_backup")
+        ):
+            if isinstance(data, dict) and data.get("format") == "kochbuch-rezepte":
+                raise ValueError(
+                    "Das ist eine Rezept-Datei. Rezepte importiert ihr über „Importieren“."
+                )
+            raise ValueError("Die Datei ist keine Kochbuch-Sicherung")
+        return data, images
+
+    async def async_restore_backup(self, path: str, replace: bool) -> dict[str, int]:
+        data, images = await self.hass.async_add_executor_job(self.read_backup_file, path)
+
+        def _write_all() -> None:
+            for name, content in images.items():
+                self._write_image(name, content)
+
+        await self.hass.async_add_executor_job(_write_all)
+
+        backup_cats = [
+            c for c in (data.get("settings") or {}).get("categories") or []
+            if isinstance(c, dict) and c.get("id") and c.get("name")
+        ]
         if replace:
             self.recipes = {}
+            settings = data.get("settings") or {}
+            if isinstance(settings, dict):
+                for key in ("shopping_list", "default_servings"):
+                    if key in settings:
+                        self.settings[key] = settings[key]
+            if backup_cats:
+                self.settings["categories"] = backup_cats
+        else:
+            have = {c["id"] for c in self.settings.get("categories", [])}
+            for cat in backup_cats:
+                if cat["id"] not in have:
+                    self.settings["categories"].append(cat)
+
         count = 0
-        for raw in recipes:
+        for raw in data["recipes"]:
             if not isinstance(raw, dict):
                 continue
-            cleaned = clean_recipe(raw)
             recipe_id = _str(raw.get("id"), 64) or uuid.uuid4().hex
+            if not replace and recipe_id in self.recipes:
+                continue
+            cleaned = clean_recipe(raw)
+            name = self._image_name(cleaned["image"])
+            if name and name not in images:
+                exists = await self.hass.async_add_executor_job(
+                    os.path.exists, os.path.join(self.images_path, name)
+                )
+                if not exists:
+                    cleaned["image"] = ""
             self.recipes[recipe_id] = {
                 **cleaned,
                 "id": recipe_id,
@@ -301,7 +563,17 @@ class KochbuchStore:
                 "cooked": [c for c in raw.get("cooked") or [] if isinstance(c, str)][-50:],
             }
             count += 1
-        if replace and isinstance(data.get("settings"), dict):
-            await self.async_set_settings(data["settings"])
         await self._async_save()
-        return count
+        if replace:
+            await self._async_cleanup_images()
+        return {"recipes": count, "images": len(images)}
+
+    # ------------------------------------------------- Automatisches Backup
+    async def async_save_backup_config(self, raw: dict[str, Any]) -> dict[str, Any]:
+        self.backup = clean_backup_config(raw, self.backup)
+        await self._async_save()
+        return public_backup(self.backup)
+
+    async def async_set_backup_status(self, last: dict[str, Any]) -> None:
+        self.backup["last"] = last
+        await self._async_save()

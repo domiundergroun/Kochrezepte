@@ -12,6 +12,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from . import websocket
+from .backup import BackupManager
 from .const import (
     DOMAIN,
     FRONTEND_URL,
@@ -22,6 +23,7 @@ from .const import (
     PANEL_URL_PATH,
     VERSION,
 )
+from .http_api import KochbuchBackupView, KochbuchRecipesView
 from .store import KochbuchStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +41,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     store = KochbuchStore(hass)
     await store.async_load()
     domain_data["store"] = store
+    manager = BackupManager(hass, store)
+    domain_data["backup"] = manager
+    manager.async_start()
 
     if not domain_data.get("http_registered"):
         await hass.http.async_register_static_paths(
@@ -48,6 +53,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             ]
         )
         websocket.async_register(hass)
+        hass.http.register_view(KochbuchRecipesView())
+        hass.http.register_view(KochbuchBackupView())
         frontend.add_extra_js_url(hass, CARD_JS)
         domain_data["http_registered"] = True
 
@@ -71,4 +78,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         frontend.async_remove_panel(hass, PANEL_URL_PATH)
+        manager = hass.data[DOMAIN].pop("backup", None)
+        if manager is not None:
+            manager.async_stop()
     return unloaded

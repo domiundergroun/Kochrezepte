@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.2.0";
+const KB_VERSION = "1.3.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -69,6 +69,17 @@ function fmtMinutes(min) {
   const h = Math.floor(min / 60), m = min % 60;
   if (h >= 24) { const d = Math.floor(h / 24), rh = h % 24; return rh ? `${d} Tg ${rh} Std` : `${d} Tg`; }
   return m ? `${h} Std ${m} Min` : `${h} Std`;
+}
+
+const PHASES = [
+  { key: "prep_steps", name: "Vorbereitung", icon: "mdi:knife", time: "prep_time" },
+  { key: "steps", name: "Kochen", icon: "mdi:stove", time: "cook_time" },
+];
+
+function allSteps(r) {
+  const out = [];
+  for (const ph of PHASES) (r[ph.key] || []).forEach((text, i, arr) => out.push({ phase: ph, text, n: i + 1, of: arr.length }));
+  return out;
 }
 
 const DIFFICULTY = { 1: "Einfach", 2: "Mittel", 3: "Anspruchsvoll" };
@@ -422,6 +433,24 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .meta-foot { margin-top: 26px; color: var(--kb-ink-soft); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 .meta-foot a { color: var(--kb-herb); font-weight: 700; }
 
+/* Vorbereitung / Kochen */
+.phase + .phase { margin-top: 18px; }
+.phase-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+.phase-head h2 { font-size: 26px; font-weight: 800; }
+.phase-time { display: inline-flex; align-items: center; gap: 5px; color: var(--kb-ink-soft); font-size: 15px; }
+.phase-time ha-icon { --mdc-icon-size: 17px; }
+.phase.ph-prep .step::before { background: var(--kb-saffron); color: var(--kb-saffron-ink); }
+.phase.ph-prep .phase-head h2 { color: var(--kb-ink); }
+.srow .num.pp { background: color-mix(in srgb, var(--kb-saffron) 30%, transparent); color: var(--kb-saffron-ink); }
+:host([dark]) .srow .num.pp { color: var(--kb-saffron); }
+.ph-title { display: inline-flex; align-items: center; gap: 10px; }
+.ph-title ha-icon { color: var(--kb-herb); }
+.cook .phase-label { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 6px 14px; border-radius: 999px; background: #21332B; color: #8CC2AE; font-weight: 700; margin-bottom: 14px; }
+.cook .phase-label.pp { background: rgba(242,177,52,.15); color: var(--kb-saffron); }
+.cook .progress i.pp { background: rgba(242,177,52,.25); }
+.cook .progress i.pp.on { background: var(--kb-saffron); }
+.cook .progress i.on:not(.pp) { background: #8CC2AE; }
+
 /* Editor */
 .editor { max-width: 960px; margin: 0 auto; padding: 8px 20px 120px; }
 .editor h1.page { font-size: 34px; font-weight: 800; margin: 10px 0 22px; }
@@ -490,6 +519,32 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .cat-row input[type=color] { width: 44px; height: 44px; padding: 3px; border-radius: 12px; border: 1.5px solid var(--kb-line); background: var(--kb-paper); }
 .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .muted { color: var(--kb-ink-soft); font-size: 14px; }
+
+/* Import / Sicherung */
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--kb-paper); margin: 8px 0 14px; }
+.seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; border: 0; border-radius: 10px; background: transparent; font-weight: 700; color: var(--kb-ink-soft); }
+.seg button.on { background: var(--kb-surface); color: var(--kb-ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 120px; border: 2px dashed var(--kb-line); border-radius: 16px; cursor: pointer; font-weight: 700; color: var(--kb-herb); background: var(--kb-paper); }
+.drop:hover { border-color: var(--kb-herb); }
+.drop ha-icon { --mdc-icon-size: 32px; }
+.drop.busy { cursor: progress; }
+.btn.small { height: 36px; padding: 0 14px; font-size: 14px; }
+.btn.small ha-icon { --mdc-icon-size: 18px; }
+.switch { display: inline-flex; align-items: center; gap: 12px; font-weight: 700; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .track { width: 46px; height: 28px; border-radius: 999px; background: var(--kb-line); position: relative; transition: background .15s; flex: none; }
+.switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+.switch input:checked + .track { background: var(--kb-herb); }
+.switch input:checked + .track::after { transform: translateX(18px); }
+.switch input:focus-visible + .track { outline: 3px solid var(--kb-saffron); outline-offset: 2px; }
+.check { display: inline-flex; align-items: center; gap: 10px; font-weight: 400 !important; color: var(--kb-ink) !important; }
+.check input { width: 20px; height: 20px; min-height: 0; accent-color: var(--kb-herb); }
+.bk-status { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--kb-paper); font-size: 14px; color: var(--kb-ink-soft); }
+.bk-status span { display: inline-flex; align-items: flex-start; gap: 8px; }
+.bk-status ha-icon { --mdc-icon-size: 18px; flex: none; margin-top: 1px; }
+.bk-ok ha-icon { color: var(--kb-herb); }
+.bk-err { color: var(--kb-tomato); }
+code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-size: .92em; }
 
 /* Dialoge */
 .scrim {
@@ -580,6 +635,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
   .pill { min-width: 0; flex: 1 1 40%; padding: 8px 12px; }
   .fields { grid-template-columns: 1fr 1fr; }
   .f.s3, .f.s2 { grid-column: span 1; }
+  .f.full-m { grid-column: span 2; }
   .f { grid-column: span 2; }
   .irow { grid-template-columns: 24px 62px 74px 1fr 36px; gap: 6px; }
   .crumbs button { font-size: 18px; padding: 0 8px; }
@@ -687,6 +743,7 @@ class KochbuchPanel extends HTMLElement {
   _setData(data) {
     this.recipes = data.recipes || [];
     this.settings = data.settings || this.settings;
+    if (data.backup) this.backupCfg = data.backup;
   }
 
   _onUpdate(data) {
@@ -735,6 +792,7 @@ class KochbuchPanel extends HTMLElement {
     }
     if (view.name === "settings" && (prev.name !== "settings" || !this.settingsDraft)) {
       this.settingsDraft = JSON.parse(JSON.stringify(this.settings));
+      this.backupDraft = null;
     }
     this.view = view;
     this.render();
@@ -763,7 +821,7 @@ class KochbuchPanel extends HTMLElement {
       servings: this.settings.default_servings || 4, servings_unit: "Portionen",
       prep_time: 0, cook_time: 0, rest_time: 0, difficulty: 1, rating: 0, favorite: false,
       ingredients: [{ amount: "", unit: "", name: "", group: "" }],
-      steps: [""], notes: "", source: "", author: "",
+      prep_steps: [""], steps: [""], notes: "", source: "", author: "",
       ...(base || {}),
     };
   }
@@ -838,13 +896,13 @@ class KochbuchPanel extends HTMLElement {
       <div class="brand"><h1>${title}</h1>${sub ? `<span class="count">${sub}</span>` : ""}</div>
       <div class="spacer"></div>
       <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="${this.view.name === "home" ? "Rezept oder Zutat suchen" : `In ${esc(this._filterName(this.filter))} suchen`}" value="${esc(this.search)}" aria-label="Suchen"></label>
-      <button class="icon-btn" data-action="import" title="Aus dem Internet importieren" aria-label="Aus dem Internet importieren"><ha-icon icon="mdi:web-plus"></ha-icon></button>
+      <button class="icon-btn" data-action="import" title="Rezepte importieren" aria-label="Rezepte importieren"><ha-icon icon="mdi:tray-arrow-down"></ha-icon></button>
       <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
       <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
   }
 
-  _toolbar() {
-    return `<div class="toolbar"><span id="result-count">${this._resultLabel()}</span><div class="spacer"></div>
+  _toolbar(extra = "") {
+    return `<div class="toolbar"><span id="result-count">${this._resultLabel()}</span><div class="spacer"></div>${extra}
         <label>Sortieren: <select id="sort">
           ${[["title", "A–Z"], ["new", "Neueste"], ["time", "Schnellste"], ["rating", "Beste Bewertung"], ["cooked", "Oft gekocht"]].map(([v, l]) => `<option value="${v}" ${this.sort === v ? "selected" : ""}>${l}</option>`).join("")}
         </select></label></div>`;
@@ -887,13 +945,13 @@ class KochbuchPanel extends HTMLElement {
     const crumbs = this._crumbs(`<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><span class="here">${c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>` : ""}${esc(this._filterName(this.filter))}</span>`);
     const header = this._top("list", `${crumbs}<div class="spacer"></div>
       <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="In ${esc(this._filterName(this.filter))} suchen" value="${esc(this.search)}" aria-label="Suchen"></label>
-      <button class="icon-btn" data-action="import" title="Aus dem Internet importieren" aria-label="Aus dem Internet importieren"><ha-icon icon="mdi:web-plus"></ha-icon></button>
+      <button class="icon-btn" data-action="import" title="Rezepte importieren" aria-label="Rezepte importieren"><ha-icon icon="mdi:tray-arrow-down"></ha-icon></button>
       <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
       <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
     const empty = !this._filtered().length && !this.search.trim();
     return `${header}<main>
       <h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${esc(this._filterName(this.filter))}</h1>
-      ${empty ? "" : this._toolbar()}
+      ${empty ? "" : this._toolbar(c && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}"><ha-icon icon="mdi:export-variant"></ha-icon>Kategorie exportieren</button>` : "")}
       <section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>
     </main>`;
   }
@@ -958,10 +1016,11 @@ class KochbuchPanel extends HTMLElement {
       ${this._crumbs(c ? `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(c.id)}"><span class="title-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</button>` : "")}
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
+      <button class="icon-btn" data-action="export-recipe" data-id="${esc(r.id)}" aria-label="Rezept exportieren" title="Rezept exportieren"><ha-icon icon="mdi:export-variant"></ha-icon></button>
       <button class="icon-btn" data-action="print" aria-label="Drucken" title="Drucken"><ha-icon icon="mdi:printer-outline"></ha-icon></button>
       <button class="icon-btn" data-action="delete" data-id="${esc(r.id)}" aria-label="Löschen" title="Löschen"><ha-icon icon="mdi:trash-can-outline"></ha-icon></button>
       <button class="btn" data-action="edit" data-id="${esc(r.id)}"><ha-icon icon="mdi:pencil-outline"></ha-icon><span class="lbl">Bearbeiten</span></button>
-      ${(r.steps || []).length ? `<button class="btn saffron" data-action="cook"><ha-icon icon="mdi:stove"></ha-icon><span class="lbl">Kochmodus</span></button>` : ""}`);
+      ${allSteps(r).length ? `<button class="btn saffron" data-action="cook"><ha-icon icon="mdi:stove"></ha-icon><span class="lbl">Kochmodus</span></button>` : ""}`);
 
     let ingHtml = "";
     (r.ingredients || []).forEach((i, idx) => {
@@ -980,7 +1039,11 @@ class KochbuchPanel extends HTMLElement {
       `<div class="pill stars"><small>Bewertung</small><span class="stars-row">${[1, 2, 3, 4, 5].map((n) => `<button class="star ${n <= (r.rating || 0) ? "on" : ""}" data-action="rate" data-n="${n}" aria-label="${n} Sterne"><ha-icon icon="mdi:star"></ha-icon></button>`).join("")}</span></div>`,
     ].join("");
 
-    const steps = (r.steps || []).map((s) => `<li class="step"><p>${this._stepHtml(s)}</p></li>`).join("");
+    const phases = PHASES.filter((ph) => (r[ph.key] || []).length).map((ph) => `
+          <div class="phase ${ph.key === "prep_steps" ? "ph-prep" : "ph-cook"}">
+            <div class="phase-head"><h2>${ph.name}</h2>${r[ph.time] ? `<span class="phase-time"><ha-icon icon="mdi:clock-outline"></ha-icon>${fmtMinutes(r[ph.time])}</span>` : ""}</div>
+            <ol class="steps">${r[ph.key].map((t) => `<li class="step"><p>${this._stepHtml(t)}</p></li>`).join("")}</ol>
+          </div>`).join("");
     const source = r.source && /^https?:\/\//i.test(r.source) ? `<a href="${esc(r.source)}" target="_blank" rel="noopener">${esc(new URL(r.source).hostname.replace(/^www\./, ""))}</a>` : esc(r.source);
 
     return `${header}<div class="detail">
@@ -1010,8 +1073,7 @@ class KochbuchPanel extends HTMLElement {
           </div>` : `<p class="muted">Noch keine Zutaten eingetragen.</p>`}
         </section>
         <section aria-label="Zubereitung">
-          <div class="sec-head"><h2>Zubereitung</h2></div>
-          ${steps ? `<ol class="steps">${steps}</ol>` : `<p class="muted">Noch keine Arbeitsschritte eingetragen.</p>`}
+          ${phases || `<div class="sec-head"><h2>Zubereitung</h2></div><p class="muted">Noch keine Arbeitsschritte eingetragen.</p>`}
           ${r.notes ? `<div class="notes"><h3>Tipps & Notizen</h3><p>${esc(r.notes)}</p></div>` : ""}
           <div class="meta-foot">
             ${r.source ? `<span>Quelle: ${source}</span>` : ""}
@@ -1037,8 +1099,9 @@ class KochbuchPanel extends HTMLElement {
     if (!this.cook) return "";
     const r = this._recipe(this.cook.id);
     if (!r) return "";
-    const steps = r.steps || [];
+    const steps = allSteps(r);
     const i = this.cook.index;
+    const cur = steps[i] || { phase: PHASES[1], text: "", n: 1, of: 1 };
     const factor = (this.servings || r.servings) / (r.servings || 1);
     let ing = "";
     (r.ingredients || []).forEach((x, idx) => {
@@ -1050,8 +1113,9 @@ class KochbuchPanel extends HTMLElement {
       <aside><h3>Zutaten für ${this.servings || r.servings} ${esc(r.servings_unit || "Portionen")}</h3><ul class="ing-list">${ing}</ul></aside>
       <div class="stage">
         <div class="bar"><h2>${esc(r.title)}</h2><button class="icon-btn" data-action="cook-close" aria-label="Kochmodus beenden"><ha-icon icon="mdi:close"></ha-icon></button></div>
-        <div class="progress">${steps.map((_, n) => `<i class="${n <= i ? "on" : ""}"></i>`).join("")}</div>
-        <div class="now"><div class="big-num">${i + 1}<small>von ${steps.length}</small></div><p>${this._stepHtml(steps[i] || "")}</p></div>
+        <div class="progress">${steps.map((st, n) => `<i class="${n <= i ? "on" : ""} ${st.phase.key === "prep_steps" ? "pp" : ""}"></i>`).join("")}</div>
+        <div class="now"><div class="phase-label ${cur.phase.key === "prep_steps" ? "pp" : ""}"><ha-icon icon="${cur.phase.icon}"></ha-icon>${cur.phase.name}</div>
+          <div class="big-num">${cur.n}<small>von ${cur.of}</small></div><p>${this._stepHtml(cur.text)}</p></div>
         <div class="nav">
           <button class="btn" data-action="cook-prev" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-left"></ha-icon>Zurück</button>
           ${last ? `<button class="btn saffron" data-action="cook-done"><ha-icon icon="mdi:check"></ha-icon>Fertig gekocht</button>`
@@ -1124,11 +1188,17 @@ class KochbuchPanel extends HTMLElement {
         <input class="inp" data-ing="unit" value="${esc(i.unit)}" placeholder="Einheit" list="kb-units" aria-label="Einheit">
         <input class="inp" data-ing="name" value="${esc(i.name)}" placeholder="Zutat" aria-label="Zutat">${del}</div>`;
     }).join("");
-    const stepRows = (d.steps || []).map((s, idx) => `<div class="srow" data-srow="${idx}">
-        <div class="grip"><button data-action="step-up" data-idx="${idx}" aria-label="Nach oben"><ha-icon icon="mdi:chevron-up"></ha-icon></button><button data-action="step-down" data-idx="${idx}" aria-label="Nach unten"><ha-icon icon="mdi:chevron-down"></ha-icon></button></div>
-        <div class="num">${idx + 1}</div>
-        <textarea class="inp" data-step placeholder="Was ist zu tun?" aria-label="Schritt ${idx + 1}">${esc(s)}</textarea>
-        <button class="icon-btn" data-action="step-del" data-idx="${idx}" aria-label="Schritt entfernen"><ha-icon icon="mdi:close"></ha-icon></button></div>`).join("");
+    const stepRows = (key) => (d[key] || []).map((s, idx) => `<div class="srow" data-srow="${key}-${idx}">
+        <div class="grip"><button data-action="step-up" data-phase="${key}" data-idx="${idx}" aria-label="Nach oben"><ha-icon icon="mdi:chevron-up"></ha-icon></button><button data-action="step-down" data-phase="${key}" data-idx="${idx}" aria-label="Nach unten"><ha-icon icon="mdi:chevron-down"></ha-icon></button></div>
+        <div class="num ${key === "prep_steps" ? "pp" : ""}">${idx + 1}</div>
+        <textarea class="inp" data-step="${key}" placeholder="${key === "prep_steps" ? "z. B. Zwiebeln fein würfeln" : "z. B. Zwiebeln 5 Minuten glasig dünsten"}" aria-label="Schritt ${idx + 1}">${esc(s)}</textarea>
+        <button class="icon-btn" data-action="step-del" data-phase="${key}" data-idx="${idx}" aria-label="Schritt entfernen"><ha-icon icon="mdi:close"></ha-icon></button></div>`).join("");
+    const phasePanel = (ph, hint) => `<section class="panel">
+        <h2><span class="ph-title"><ha-icon icon="${ph.icon}"></ha-icon>${ph.name}</span></h2>
+        <p class="muted" style="margin:-6px 0 14px">${hint}</p>
+        <div class="rows">${stepRows(ph.key)}</div>
+        <div class="add-row"><button class="btn" data-action="step-add" data-phase="${ph.key}"><ha-icon icon="mdi:plus"></ha-icon>Schritt</button></div>
+      </section>`;
 
     return `${this._top("", `<button class="icon-btn" data-action="cancel-edit" aria-label="Abbrechen"><ha-icon icon="mdi:close"></ha-icon></button><div class="brand"><h1>${isNew ? "Neues Rezept" : "Rezept bearbeiten"}</h1></div>`)}
     <div class="editor">
@@ -1162,12 +1232,8 @@ class KochbuchPanel extends HTMLElement {
           <button class="btn" data-action="ing-head"><ha-icon icon="mdi:format-header-pound"></ha-icon>Zwischenüberschrift</button>
         </div>
       </section>
-      <section class="panel">
-        <h2>Zubereitung</h2>
-        <div class="rows">${stepRows}</div>
-        <div class="add-row"><button class="btn" data-action="step-add"><ha-icon icon="mdi:plus"></ha-icon>Schritt</button></div>
-        <p class="hint">Zeitangaben wie „20 Minuten“ werden in der Ansicht automatisch zum Timer.</p>
-      </section>
+      ${phasePanel(PHASES[0], "Alles, was vor dem Kochen erledigt wird: schneiden, abwiegen, marinieren …")}
+      ${phasePanel(PHASES[1], "Das eigentliche Kochen, Braten oder Backen. Zeitangaben wie „20 Minuten“ werden automatisch zum Timer.")}
       <section class="panel">
         <h2>Zusätzliches</h2>
         <div class="fields">
@@ -1198,9 +1264,11 @@ class KochbuchPanel extends HTMLElement {
       else ings.push({ amount: get("amount"), unit: get("unit"), name: get("name"), group: "" });
     });
     if (root.querySelector("[data-row]") || !d.ingredients.length) d.ingredients = ings;
-    const steps = [];
-    root.querySelectorAll("[data-step]").forEach((el) => steps.push(el.value));
-    d.steps = steps;
+    for (const ph of PHASES) {
+      const list = [];
+      root.querySelectorAll(`[data-step="${ph.key}"]`).forEach((el) => list.push(el.value));
+      d[ph.key] = list;
+    }
   }
 
   _move(arr, idx, dir) {
@@ -1219,7 +1287,7 @@ class KochbuchPanel extends HTMLElement {
     recipe.ingredients = d.ingredients
       .filter((i) => (i._head ? i.group.trim() : i.name.trim() || i.amount.trim()))
       .map((i) => (i._head ? { amount: "", unit: "", name: "", group: i.group.trim() } : { amount: i.amount.trim(), unit: i.unit.trim(), name: i.name.trim(), group: "" }));
-    recipe.steps = d.steps.map((s) => s.trim()).filter(Boolean);
+    for (const ph of PHASES) recipe[ph.key] = (d[ph.key] || []).map((s) => s.trim()).filter(Boolean);
     this._saving = true; this.render();
     try {
       const saved = await this._hass.callWS({ type: "kochbuch/save", recipe });
@@ -1289,16 +1357,152 @@ class KochbuchPanel extends HTMLElement {
         </div>
         ${todos.length ? "" : `<p class="hint">Keine To-do-Liste gefunden. Richtet unter Einstellungen › Geräte & Dienste die Integration „Einkaufsliste“ ein.</p>`}
       </section>
-      <section class="panel"><h2>Sicherung</h2>
-        <p class="muted" style="margin-top:0">Speichert alle Rezepte als Datei oder spielt eine Sicherung wieder ein. Fotos bleiben im Ordner <code>kochbuch_bilder</code> eurer Home-Assistant-Konfiguration.</p>
+      <section class="panel"><h2>Rezepte austauschen</h2>
+        <p class="muted" style="margin:-6px 0 14px">Gebt Rezepte als Datei weiter, z. B. an Freunde mit eigenem Kochbuch, oder übernehmt Rezepte aus so einer Datei. Fotos sind enthalten. Einzelne Rezepte oder ganze Kategorien exportiert ihr direkt dort über <ha-icon icon="mdi:export-variant" style="--mdc-icon-size:16px;vertical-align:-3px"></ha-icon>.</p>
         <div class="settings-actions">
-          <button class="btn" data-action="export"><ha-icon icon="mdi:download"></ha-icon>Sicherung herunterladen</button>
-          <label class="btn" tabindex="0"><ha-icon icon="mdi:upload"></ha-icon>Sicherung einspielen<input type="file" accept="application/json,.json" id="backup-file" hidden></label>
+          <button class="btn" data-action="export-all"><ha-icon icon="mdi:export-variant"></ha-icon>Alle Rezepte exportieren</button>
+          <label class="btn" tabindex="0"><ha-icon icon="mdi:tray-arrow-down"></ha-icon>Rezepte importieren<input type="file" accept=".json,application/json" id="recipes-file" hidden></label>
         </div>
       </section>
+      ${this._hass.user?.is_admin ? this._renderBackupPanels() : `<section class="panel"><h2>Sicherung</h2><p class="muted" style="margin:0">Sicherungen und das automatische Backup können nur Administratoren verwalten.</p></section>`}
       <p class="muted" style="text-align:center">Kochbuch ${KB_VERSION}</p>
     </div>
     <div class="savebar"><button class="btn" data-action="back">Abbrechen</button><button class="btn primary" data-action="settings-save"><ha-icon icon="mdi:content-save-outline"></ha-icon><span class="lbl">Einstellungen speichern</span><span class="lbl-m">Speichern</span></button></div>`;
+  }
+
+  _renderBackupPanels() {
+    const cfg = this.backupCfg || { enabled: false, host: "", port: 21, user: "", path: "/", tls: false, verify: false, freq: "daily", time: "03:00", keep: 14, last: null, has_password: false };
+    const b = { ...cfg, ...(this.backupDraft || {}) };
+    const busy = this._bbusy;
+    const last = cfg.last;
+    let status = last
+      ? (last.ok ? `<span class="bk-ok"><ha-icon icon="mdi:check-circle"></ha-icon>Letztes Backup am ${new Date(last.ts).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" })} Uhr: ${esc(last.msg)}</span>`
+                 : `<span class="bk-err"><ha-icon icon="mdi:alert-circle"></ha-icon>Letztes Backup am ${new Date(last.ts).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" })} Uhr fehlgeschlagen: ${esc(last.msg)}</span>`)
+      : `<span>Noch kein automatisches Backup durchgeführt.</span>`;
+    if (cfg.enabled && cfg.host) status += `<span>Nächstes Backup: ${cfg.freq === "weekly" ? "montags" : "täglich"} um ${esc(cfg.time)} Uhr</span>`;
+    const o = (v, cur, label) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${label}</option>`;
+    return `<section class="panel"><h2>Sicherung</h2>
+        <p class="muted" style="margin:-6px 0 14px">Eine komplette Sicherung als ZIP-Datei: alle Rezepte, Fotos, Kategorien und Einstellungen. Damit stellt ihr das Kochbuch z. B. nach einer Neuinstallation wieder her.</p>
+        <div class="settings-actions">
+          <button class="btn" data-action="backup-download" ${busy ? "disabled" : ""}><ha-icon icon="mdi:folder-zip-outline"></ha-icon>${busy === "download" ? "Wird erstellt …" : "Sicherung herunterladen"}</button>
+          <label class="btn" tabindex="0"><ha-icon icon="mdi:backup-restore"></ha-icon>Sicherung einspielen<input type="file" accept=".zip,.json,application/zip,application/json" id="backup-file" hidden></label>
+        </div>
+      </section>
+      <section class="panel"><h2><span class="ph-title"><ha-icon icon="mdi:nas"></ha-icon>Automatisches Backup aufs Netzwerklaufwerk</span></h2>
+        <p class="muted" style="margin:-6px 0 14px">Legt regelmäßig eine Sicherung per FTP auf eurem NAS ab (z. B. Synology, QNAP, Fritz!NAS). Ältere Sicherungen werden automatisch gelöscht.</p>
+        <label class="switch"><input type="checkbox" id="b-enabled" ${b.enabled ? "checked" : ""}><span class="track"></span>Automatisches Backup aktiv</label>
+        <div class="fields" style="margin-top:16px">
+          <div class="f s3 full-m"><label for="b-host">Server (Name oder IP)</label><input id="b-host" value="${esc(b.host)}" placeholder="z. B. 192.168.178.20" autocomplete="off"></div>
+          <div class="f s3"><label for="b-port">Port</label><input id="b-port" type="number" min="1" max="65535" value="${esc(b.port)}"></div>
+          <div class="f s3 full-m"><label for="b-user">Benutzer</label><input id="b-user" value="${esc(b.user)}" autocomplete="off"></div>
+          <div class="f s3 full-m"><label for="b-pass">Passwort</label><input id="b-pass" type="password" value="${esc(b.password || "")}" placeholder="${cfg.has_password ? "gespeichert – leer lassen, um es zu behalten" : ""}" autocomplete="new-password"></div>
+          <div class="f s3 full-m"><label for="b-path">Zielordner auf dem Server</label><input id="b-path" value="${esc(b.path)}" placeholder="/Backups/Kochbuch" autocomplete="off"></div>
+          <div class="f s3 full-m"><label for="b-tls">Verbindung</label><select id="b-tls">${o(0, b.tls ? 1 : 0, "FTP (unverschlüsselt)")}${o(1, b.tls ? 1 : 0, "FTPS (verschlüsselt)")}</select></div>
+          ${b.tls ? `<div class="f"><label class="check"><input type="checkbox" id="b-verify" ${b.verify ? "checked" : ""}>Zertifikat prüfen (bei selbst signierten NAS-Zertifikaten aus lassen)</label></div>` : ""}
+          <div class="f s2"><label for="b-freq">Häufigkeit</label><select id="b-freq">${o("daily", b.freq, "Täglich")}${o("weekly", b.freq, "Wöchentlich (montags)")}</select></div>
+          <div class="f s2"><label for="b-time">Uhrzeit</label><input id="b-time" type="time" value="${esc(b.time)}"></div>
+          <div class="f s2"><label for="b-keep">Sicherungen aufbewahren</label><input id="b-keep" type="number" min="1" max="365" value="${esc(b.keep)}"></div>
+        </div>
+        <div class="settings-actions" style="margin-top:18px">
+          <button class="btn" data-action="bk-test" ${busy ? "disabled" : ""}><ha-icon icon="mdi:lan-connect"></ha-icon>${busy === "test" ? "Teste …" : "Verbindung testen"}</button>
+          <button class="btn" data-action="bk-run" ${busy ? "disabled" : ""}><ha-icon icon="mdi:cloud-upload-outline"></ha-icon>${busy === "run" ? "Sichert …" : "Jetzt sichern"}</button>
+        </div>
+        <div class="bk-status">${status}</div>
+        <p class="hint">Änderungen hier werden mit „Einstellungen speichern“ übernommen. Das Passwort bleibt in Home Assistant und landet nie in einer Sicherung. Reines FTP überträgt es unverschlüsselt im Heimnetz – nutzt FTPS, wenn euer NAS es kann.</p>
+      </section>`;
+  }
+
+  _readBackup() {
+    const r = this.shadowRoot;
+    if (!r.querySelector("#b-host")) return;
+    const v = (id) => r.querySelector(id)?.value ?? "";
+    this.backupDraft = {
+      enabled: !!r.querySelector("#b-enabled")?.checked,
+      host: v("#b-host").trim(), port: parseInt(v("#b-port"), 10) || 21, user: v("#b-user").trim(),
+      password: v("#b-pass"), path: v("#b-path") || "/", tls: v("#b-tls") === "1",
+      verify: r.querySelector("#b-verify") ? r.querySelector("#b-verify").checked : !!(this.backupDraft || this.backupCfg || {}).verify,
+      freq: v("#b-freq") || "daily", time: v("#b-time") || "03:00", keep: parseInt(v("#b-keep"), 10) || 14,
+    };
+  }
+
+  async _backupAction(kind) {
+    this._readSettings();
+    this._readBackup();
+    const cfg = { ...this.backupDraft };
+    if (!cfg.password) delete cfg.password;
+    this._bbusy = kind; this.render();
+    try {
+      let res;
+      if (kind === "save") res = await this._hass.callWS({ type: "kochbuch/backup_save", config: cfg });
+      else if (kind === "test") res = await this._hass.callWS({ type: "kochbuch/backup_test", config: cfg });
+      else {
+        const saved = await this._hass.callWS({ type: "kochbuch/backup_save", config: cfg });
+        this.backupCfg = saved.backup; this.backupDraft = null;
+        res = await this._hass.callWS({ type: "kochbuch/backup_run" });
+      }
+      if (res.backup) this.backupCfg = res.backup;
+      if (kind !== "test") this.backupDraft = null;
+      this._bbusy = null; this.render();
+      this._showToast(res.message || "Fertig");
+    } catch (err) {
+      this._bbusy = null;
+      if (kind === "run") { try { const d = await this._hass.callWS({ type: "kochbuch/data" }); if (d.backup) this.backupCfg = d.backup; } catch (e) { /* egal */ } }
+      this.render();
+      this._showToast(err.message || String(err), true);
+    }
+  }
+
+  async _downloadFile(url, fallback) {
+    const res = await this._hass.fetchWithAuth(url);
+    if (!res.ok) {
+      let msg = `Fehler ${res.status}`;
+      try { msg = (await res.json()).message || msg; } catch (e) { /* egal */ }
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    let name = fallback;
+    const cd = res.headers.get("Content-Disposition") || "";
+    const m = cd.match(/filename\*=UTF-8''([^;]+)/);
+    if (m) name = decodeURIComponent(m[1]);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    return name;
+  }
+
+  async _uploadFile(url, file) {
+    const res = await this._hass.fetchWithAuth(url, { method: "POST", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } });
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* egal */ }
+    if (!res.ok) throw new Error(data.message || `Fehler ${res.status}`);
+    return data;
+  }
+
+  async _exportRecipes(query, label) {
+    try {
+      const name = await this._downloadFile(`/api/kochbuch/rezepte${query}`, "Rezepte.kochbuch.json");
+      this._showToast(`${label} exportiert: ${name}`);
+    } catch (err) { this._showToast(`Export fehlgeschlagen: ${err.message || err}`, true); }
+  }
+
+  async _importRecipeFile(file) {
+    if (this.dialog?.type === "import") { this.dialog = { ...this.dialog, busy: true, error: null }; this.render(); }
+    try {
+      const res = await this._uploadFile("/api/kochbuch/rezepte", file);
+      this._setData(await this._hass.callWS({ type: "kochbuch/data" }));
+      if (this.view.name === "settings") this.settingsDraft = JSON.parse(JSON.stringify(this.settings));
+      this.dialog = null;
+      this.render();
+      const parts = [`${res.imported} ${res.imported === 1 ? "Rezept" : "Rezepte"} importiert`];
+      if (res.skipped) parts.push(`${res.skipped} schon vorhanden`);
+      if (res.categories) parts.push(`${res.categories} neue ${res.categories === 1 ? "Kategorie" : "Kategorien"}`);
+      this._showToast(parts.join(", "));
+    } catch (err) {
+      if (this.dialog?.type === "import") { this.dialog = { ...this.dialog, busy: false, error: err.message || String(err) }; this.render(); }
+      else this._showToast(err.message || String(err), true);
+    }
   }
 
   _readSettings() {
@@ -1310,6 +1514,7 @@ class KochbuchPanel extends HTMLElement {
       const c = s.categories[Number(row.dataset.cat)];
       row.querySelectorAll("[data-c]").forEach((el) => { c[el.dataset.c] = el.value; });
     });
+    this._readBackup();
   }
 
   /* ---------------------------------------------------------- Dialoge */
@@ -1327,17 +1532,26 @@ class KochbuchPanel extends HTMLElement {
         <select class="inp" id="move-target">${others.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}<option value="">Ohne Kategorie lassen</option></select>
         <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="cat-del-confirm">Kategorie löschen</button></div>`;
     } else if (d.type === "import") {
-      inner = `<h2>Rezept aus dem Internet</h2><p>Fügt die Adresse eines Rezepts ein, z. B. von Chefkoch, Lecker oder einem Foodblog. Ihr könnt alles vor dem Speichern noch anpassen.</p>
-        <input class="inp" id="import-url" type="url" placeholder="https://www.chefkoch.de/rezepte/…" value="${esc(d.url || "")}" ${d.busy ? "disabled" : ""}>
+      const mode = d.mode || "url";
+      inner = `<h2>Rezepte importieren</h2>
+        <div class="seg" role="tablist">
+          <button role="tab" class="${mode === "url" ? "on" : ""}" data-action="import-mode" data-mode="url" aria-selected="${mode === "url"}"><ha-icon icon="mdi:link-variant"></ha-icon>Aus dem Internet</button>
+          <button role="tab" class="${mode === "file" ? "on" : ""}" data-action="import-mode" data-mode="file" aria-selected="${mode === "file"}"><ha-icon icon="mdi:file-upload-outline"></ha-icon>Aus einer Datei</button>
+        </div>
+        ${mode === "url" ? `<p>Fügt die Adresse eines Rezepts ein, z. B. von Chefkoch, Lecker oder einem Foodblog. Ihr könnt alles vor dem Speichern noch anpassen.</p>
+        <input class="inp" id="import-url" type="url" placeholder="https://www.chefkoch.de/rezepte/…" value="${esc(d.url || "")}" ${d.busy ? "disabled" : ""}>`
+        : `<p>Wählt eine Rezept-Datei (<code>.kochbuch.json</code>), die mit „Exportieren“ erstellt wurde. Die Rezepte kommen samt Fotos dazu; fehlende Kategorien werden angelegt.</p>
+        <label class="drop ${d.busy ? "busy" : ""}">${d.busy ? `<span class="spin"></span><span>Wird importiert …</span>` : `<ha-icon icon="mdi:tray-arrow-down"></ha-icon><span>Datei auswählen</span>`}<input type="file" accept=".json,application/json" id="import-file" hidden ${d.busy ? "disabled" : ""}></label>`}
         ${d.error ? `<p style="color:var(--kb-tomato);margin:10px 0 0">${esc(d.error)}</p>` : ""}
-        <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn primary" data-action="import-go" ${d.busy ? "disabled" : ""}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird geladen` : `<ha-icon icon="mdi:download"></ha-icon>Rezept holen`}</button></div>`;
+        <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button>${mode === "url" ? `<button class="btn primary" data-action="import-go" ${d.busy ? "disabled" : ""}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird geladen` : `<ha-icon icon="mdi:download"></ha-icon>Rezept holen`}</button>` : ""}</div>`;
     } else if (d.type === "paste") {
       inner = `<h2>Zutatenliste einfügen</h2><p>Eine Zutat pro Zeile. Zeilen mit Doppelpunkt am Ende werden zu Zwischenüberschriften.</p>
         <textarea class="inp" id="paste-text" placeholder="Für den Teig:\n250 g Mehl\n2 Eier\n1 Prise Salz"></textarea>
         <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn primary" data-action="paste-go"><ha-icon icon="mdi:check"></ha-icon>Übernehmen</button></div>`;
     } else if (d.type === "restore") {
-      inner = `<h2>Sicherung einspielen</h2><p>Die Datei enthält ${d.data.recipes.length} Rezepte. Sollen sie zu den vorhandenen dazukommen oder das Kochbuch komplett ersetzen?</p>
-        <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn" data-action="restore-go" data-replace="1">Alles ersetzen</button><button class="btn primary" data-action="restore-go" data-replace="0">Dazunehmen</button></div>`;
+      inner = `<h2>Sicherung einspielen</h2><p>„${esc(d.file.name)}“ (${(d.file.size / 1048576).toFixed(1).replace(".", ",")} MB). Sollen die Rezepte zu den vorhandenen dazukommen oder das Kochbuch komplett ersetzen? Beim Ersetzen gehen alle Rezepte verloren, die nicht in der Sicherung sind.</p>
+        ${d.busy ? `<p style="display:flex;align-items:center;gap:10px"><span class="spin"></span>Wird eingespielt …</p>` : ""}
+        <div class="row"><button class="btn" data-action="dlg-close" ${d.busy ? "disabled" : ""}>Abbrechen</button><button class="btn danger" data-action="restore-go" data-replace="1" ${d.busy ? "disabled" : ""}>Alles ersetzen</button><button class="btn primary" data-action="restore-go" data-replace="0" ${d.busy ? "disabled" : ""}>Dazunehmen</button></div>`;
     }
     return `<div class="scrim" data-action="scrim"><div class="dialog" role="dialog" aria-modal="true">${inner}</div></div>`;
   }
@@ -1403,23 +1617,13 @@ class KochbuchPanel extends HTMLElement {
       ${r.image ? `<img src="${esc(new URL(r.image, location.origin).href)}">` : ""}<h1>${esc(r.title)}</h1>
       <div class="meta">${[r.prep_time ? `Vorbereitung ${fmtMinutes(r.prep_time)}` : "", r.cook_time ? `Kochzeit ${fmtMinutes(r.cook_time)}` : "", `${this.servings || r.servings} ${esc(r.servings_unit || "Portionen")}`].filter(Boolean).join("&ensp;|&ensp;")}</div>
       ${r.description ? `<p>${esc(r.description)}</p>` : ""}
-      <div class="cols"><div><h2>Zutaten</h2><ul>${ing}</ul></div><div><h2>Zubereitung</h2><ol>${(r.steps || []).map((s) => `<li>${esc(s)}</li>`).join("")}</ol>
+      <div class="cols"><div><h2>Zutaten</h2><ul>${ing}</ul></div><div>${PHASES.filter((ph) => (r[ph.key] || []).length).map((ph) => `<h2>${ph.name}</h2><ol>${r[ph.key].map((s) => `<li>${esc(s)}</li>`).join("")}</ol>`).join("")}
       ${r.notes ? `<div class="notes">${esc(r.notes)}</div>` : ""}</div></div>
       <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
     w.document.close();
   }
 
-  async _export() {
-    try {
-      const data = await this._hass.callWS({ type: "kochbuch/export" });
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `kochbuch-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    } catch (err) { this._showToast(`Sicherung fehlgeschlagen: ${err.message || err}`, true); }
-  }
+
 
   async _onClick(e) {
     const el = e.target.closest("[data-action]");
@@ -1440,11 +1644,26 @@ class KochbuchPanel extends HTMLElement {
       case "filter": this._go(`kategorie/${encodeURIComponent(id)}`, true); break;
       case "cat": this._navigatedInside = true; this._go(`kategorie/${encodeURIComponent(this._slug(id))}`); break;
       case "back": this._back(); break;
-      case "import": this.dialog = { type: "import" }; this._focusSel = "#import-url"; this.render(); break;
+      case "import": this.dialog = { type: "import", mode: "url" }; this._focusSel = "#import-url"; this.render(); break;
+      case "import-mode": this.dialog = { type: "import", mode: el.dataset.mode }; if (el.dataset.mode === "url") this._focusSel = "#import-url"; this.render(); break;
+      case "export-recipe": this._exportRecipes(`?ids=${encodeURIComponent(id)}`, "Rezept"); break;
+      case "export-cat": this._exportRecipes(`?category=${encodeURIComponent(id)}`, "Kategorie"); break;
+      case "export-all": this._exportRecipes("", "Alle Rezepte"); break;
+      case "backup-download": {
+        this._readSettings(); this._readBackup();
+        this._bbusy = "download"; this.render();
+        try { const name = await this._downloadFile("/api/kochbuch/backup", "kochbuch-backup.zip"); this._showToast(`Sicherung gespeichert: ${name}`); }
+        catch (err) { this._showToast(`Sicherung fehlgeschlagen: ${err.message || err}`, true); }
+        this._bbusy = null; this.render();
+        break;
+      }
+      case "bk-save": this._backupAction("save"); break;
+      case "bk-test": this._backupAction("test"); break;
+      case "bk-run": this._backupAction("run"); break;
       case "dlg-close": this.dialog = null; this.render(); break;
       case "import-go": {
         const url = this.shadowRoot.querySelector("#import-url").value.trim();
-        this.dialog = { type: "import", url, busy: true }; this.render();
+        this.dialog = { type: "import", mode: "url", url, busy: true }; this.render();
         try {
           const recipe = await this._hass.callWS({ type: "kochbuch/import_url", url });
           this.dialog = null;
@@ -1454,7 +1673,7 @@ class KochbuchPanel extends HTMLElement {
           this._go("neu");
           this._showToast("Rezept übernommen – prüft und speichert es.");
         } catch (err) {
-          this.dialog = { type: "import", url, error: err.message || String(err) }; this.render();
+          this.dialog = { type: "import", mode: "url", url, error: err.message || String(err) }; this.render();
         }
         break;
       }
@@ -1478,7 +1697,7 @@ class KochbuchPanel extends HTMLElement {
       case "cook": this.cook = { id: this.view.id, index: 0 }; this._requestWake(); this.render(); break;
       case "cook-close": this.cook = null; this._releaseWake(); this.render(); break;
       case "cook-prev": this.cook.index = Math.max(0, this.cook.index - 1); this.render(); break;
-      case "cook-next": { const r = this._recipe(this.cook.id); this.cook.index = Math.min(r.steps.length - 1, this.cook.index + 1); this.render(); break; }
+      case "cook-next": { const r = this._recipe(this.cook.id); this.cook.index = Math.min(allSteps(r).length - 1, this.cook.index + 1); this.render(); break; }
       case "cook-done": {
         const cid = this.cook.id; this.cook = null; this._releaseWake();
         this._showToast("Guten Appetit!");
@@ -1498,10 +1717,10 @@ class KochbuchPanel extends HTMLElement {
       case "ing-del": this._readDraft(); this.draft.ingredients.splice(idx, 1); this.render(); break;
       case "ing-up": this._readDraft(); this._move(this.draft.ingredients, idx, -1); this.render(); break;
       case "ing-down": this._readDraft(); this._move(this.draft.ingredients, idx, 1); this.render(); break;
-      case "step-add": this._readDraft(); this.draft.steps.push(""); this._focusSel = `[data-srow="${this.draft.steps.length - 1}"] textarea`; this.render(); break;
-      case "step-del": this._readDraft(); this.draft.steps.splice(idx, 1); this.render(); break;
-      case "step-up": this._readDraft(); this._move(this.draft.steps, idx, -1); this.render(); break;
-      case "step-down": this._readDraft(); this._move(this.draft.steps, idx, 1); this.render(); break;
+      case "step-add": { this._readDraft(); const k = el.dataset.phase; this.draft[k] = this.draft[k] || []; this.draft[k].push(""); this._focusSel = `[data-srow="${k}-${this.draft[k].length - 1}"] textarea`; this.render(); break; }
+      case "step-del": this._readDraft(); this.draft[el.dataset.phase].splice(idx, 1); this.render(); break;
+      case "step-up": this._readDraft(); this._move(this.draft[el.dataset.phase], idx, -1); this.render(); break;
+      case "step-down": this._readDraft(); this._move(this.draft[el.dataset.phase], idx, 1); this.render(); break;
       case "tag-del": this._readDraft(); this.draft.tags.splice(idx, 1); this._focusSel = "#tag-input"; this.render(); break;
       case "paste": this._readDraft(); this.dialog = { type: "paste" }; this._focusSel = "#paste-text"; this.render(); break;
       case "paste-go": {
@@ -1555,6 +1774,12 @@ class KochbuchPanel extends HTMLElement {
         this._readSettings();
         this.settingsDraft.categories = this.settingsDraft.categories.filter((c) => c.name.trim());
         try {
+          if (this.backupDraft && this._hass.user?.is_admin) {
+            const cfg = { ...this.backupDraft };
+            if (!cfg.password) delete cfg.password;
+            const res = await this._hass.callWS({ type: "kochbuch/backup_save", config: cfg });
+            this.backupCfg = res.backup; this.backupDraft = null;
+          }
           this.settings = await this._hass.callWS({ type: "kochbuch/settings", settings: this.settingsDraft });
           if (this.settingsDraft.moves) this._setData(await this._hass.callWS({ type: "kochbuch/data" }));
           this._showToast("Einstellungen gespeichert");
@@ -1562,17 +1787,16 @@ class KochbuchPanel extends HTMLElement {
         } catch (err) { this._showToast(`Fehler: ${err.message || err}`, true); }
         break;
       }
-      case "export": this._export(); break;
       case "restore-go": {
-        const data = this.dialog.data; const replace = el.dataset.replace === "1";
-        this.dialog = null;
+        const file = this.dialog.file; const replace = el.dataset.replace === "1";
+        this.dialog = { ...this.dialog, busy: true }; this.render();
         try {
-          const res = await this._hass.callWS({ type: "kochbuch/import_backup", data, replace });
-          const fresh = await this._hass.callWS({ type: "kochbuch/data" });
-          this._setData(fresh);
+          const res = await this._uploadFile(`/api/kochbuch/backup?mode=${replace ? "replace" : "merge"}`, file);
+          this._setData(await this._hass.callWS({ type: "kochbuch/data" }));
           this.settingsDraft = JSON.parse(JSON.stringify(this.settings));
-          this._showToast(`${res.imported} Rezepte eingespielt`);
-        } catch (err) { this._showToast(`Einspielen fehlgeschlagen: ${err.message || err}`, true); }
+          this.dialog = null;
+          this._showToast(`Sicherung eingespielt: ${res.recipes} ${res.recipes === 1 ? "Rezept" : "Rezepte"}, ${res.images} Fotos`);
+        } catch (err) { this.dialog = null; this._showToast(`Einspielen fehlgeschlagen: ${err.message || err}`, true); }
         this.render();
         break;
       }
@@ -1603,12 +1827,13 @@ class KochbuchPanel extends HTMLElement {
     if (t.id === "sort") { this.sort = t.value; localStorage.setItem("kochbuch-sort", t.value); this.render(); }
     else if (t.id === "img-file" && t.files?.[0]) this._uploadImage(t.files[0]);
     else if (t.id === "backup-file" && t.files?.[0]) {
-      this._readSettings();
-      try {
-        const data = JSON.parse(await t.files[0].text());
-        if (!Array.isArray(data.recipes)) throw new Error("Keine Kochbuch-Sicherung");
-        this.dialog = { type: "restore", data }; this.render();
-      } catch (err) { this._showToast(`Datei unlesbar: ${err.message || err}`, true); }
+      this._readSettings(); this._readBackup();
+      this.dialog = { type: "restore", file: t.files[0] }; this.render();
+    } else if ((t.id === "recipes-file" || t.id === "import-file") && t.files?.[0]) {
+      if (t.id === "recipes-file") { this._readSettings(); this._readBackup(); }
+      this._importRecipeFile(t.files[0]);
+    } else if (t.id === "b-tls") {
+      this._readSettings(); this._readBackup(); this.render();
     }
   }
 

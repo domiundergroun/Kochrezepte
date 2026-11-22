@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.2.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.3.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -12,12 +12,15 @@ Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in de
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
 - **Einkaufsliste**: Zutaten antippen, die schon da sind – der Rest landet in eurer To-do-Liste (z. B. „Einkaufsliste“)
+- **Zubereitung in zwei Teilen**: Vorbereitung (schneiden, abwiegen …) und Kochen, jeweils mit eigener Zeit
 - **Kochmodus**: ein Schritt pro Bildschirm in großer Schrift, Bildschirm bleibt an, Zutaten daneben
 - **Timer**: „20 Minuten“ im Text wird automatisch zum Timer-Knopf, mit Signalton
 - **Import aus dem Internet**: Adresse von Chefkoch, Lecker, Foodblogs usw. einfügen – Rezept und Foto werden übernommen
 - **Zutatenliste einfügen**: ganze Liste aus der Zwischenablage, wird automatisch in Menge/Einheit/Zutat zerlegt
 - **Drucken** als schlichtes Rezeptblatt
-- **Sicherung** herunterladen und wieder einspielen
+- **Rezepte exportieren und importieren**: einzelne Rezepte, ganze Kategorien oder alle Rezepte als Datei (mit Fotos) weitergeben und übernehmen
+- **Sicherung** als ZIP (Rezepte, Fotos, Kategorien, Einstellungen) herunterladen und wieder einspielen
+- **Automatisches Backup aufs NAS** per FTP/FTPS, täglich oder wöchentlich, alte Sicherungen werden aufgeräumt
 - **Dashboard-Karte** „Heute kochen“, Lieblingsrezepte oder neue Rezepte
 - **Sensor** `sensor.kochbuch_rezepte` mit Anzahl, Favoriten und Rezept des Tages
 - Hell- und Dunkelmodus, optimiert für Handy, Tablet und Desktop
@@ -58,6 +61,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.3.0 | Zubereitung getrennt in Vorbereitung und Kochen; Rezepte exportieren/importieren (einzeln, Kategorie, alle); Sicherung als ZIP mit Fotos; automatisches Backup per FTP aufs Netzwerklaufwerk |
 | 1.2.0 | Startseite zeigt nur noch die Kategorien; Reiterleiste ersetzt durch „Kochbuch › Kategorie“ zum Zurückspringen; Kategorie beim Rezept ist Pflicht; beim Löschen einer Kategorie wählt ihr, wohin die Rezepte wandern |
 | 1.1.0 | Startseite zeigt die Kategorien als Kacheln; Kategorien in den Einstellungen anlegen, bearbeiten, sortieren und löschen; neue Standard-Kategorien Nudeln, Soßen, Braten, Backen, Suppen |
 | 1.0.1 | Handy: Suchfeld in eigener Zeile, Kopfzeile passt wieder aufs Display; Mengen wie 1/2 werden als ½ angezeigt; Karten-Schriften korrigiert |

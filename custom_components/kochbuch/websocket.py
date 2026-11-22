@@ -16,6 +16,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN, SIGNAL_UPDATED, VERSION
 from .importer import async_import_url
+from .backup import BackupError, clean_backup_config, public_backup, test_connection
 from .store import IMAGE_TYPES, KochbuchStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,20 +42,24 @@ def async_register(hass: HomeAssistant) -> None:
         ws_upload_image,
         ws_import_url,
         ws_settings,
-        ws_export,
-        ws_import_backup,
+        ws_backup_save,
+        ws_backup_test,
+        ws_backup_run,
     ):
         websocket_api.async_register_command(hass, handler)
 
 
-def _payload(store: KochbuchStore) -> dict[str, Any]:
-    return {"recipes": store.list(), "settings": store.settings, "version": VERSION}
+def _payload(store: KochbuchStore, user=None) -> dict[str, Any]:
+    data = {"recipes": store.list(), "settings": store.settings, "version": VERSION}
+    if user is not None and user.is_admin:
+        data["backup"] = public_backup(store.backup)
+    return data
 
 
 @websocket_api.websocket_command({vol.Required("type"): "kochbuch/data"})
 @callback
 def ws_data(hass, connection, msg):
-    connection.send_result(msg["id"], _payload(_store(hass)))
+    connection.send_result(msg["id"], _payload(_store(hass), connection.user))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "kochbuch/subscribe"})
@@ -63,7 +68,7 @@ def ws_subscribe(hass, connection, msg):
     @callback
     def _updated() -> None:
         connection.send_message(
-            websocket_api.event_message(msg["id"], _payload(_store(hass)))
+            websocket_api.event_message(msg["id"], _payload(_store(hass), connection.user))
         )
 
     connection.subscriptions[msg["id"]] = async_dispatcher_connect(
@@ -177,24 +182,54 @@ async def ws_settings(hass, connection, msg):
     connection.send_result(msg["id"], settings)
 
 
-@websocket_api.websocket_command({vol.Required("type"): "kochbuch/export"})
-@callback
-def ws_export(hass, connection, msg):
-    connection.send_result(msg["id"], _store(hass).export())
+def _manager(hass: HomeAssistant):
+    return hass.data[DOMAIN]["backup"]
 
 
 @websocket_api.websocket_command(
-    {
-        vol.Required("type"): "kochbuch/import_backup",
-        vol.Required("data"): dict,
-        vol.Optional("replace", default=False): bool,
-    }
+    {vol.Required("type"): "kochbuch/backup_save", vol.Required("config"): dict}
 )
+@websocket_api.require_admin
 @websocket_api.async_response
-async def ws_import_backup(hass, connection, msg):
+async def ws_backup_save(hass, connection, msg):
     try:
-        count = await _store(hass).async_import(msg["data"], msg["replace"])
+        public = await _store(hass).async_save_backup_config(msg["config"])
     except ValueError as err:
-        connection.send_error(msg["id"], "invalid_backup", str(err))
+        connection.send_error(msg["id"], "invalid", str(err))
         return
-    connection.send_result(msg["id"], {"imported": count})
+    _manager(hass).async_reschedule()
+    connection.send_result(
+        msg["id"], {"backup": public, "message": "Backup-Einstellungen gespeichert"}
+    )
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "kochbuch/backup_test", vol.Optional("config"): dict}
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_backup_test(hass, connection, msg):
+    store = _store(hass)
+    try:
+        cfg = clean_backup_config({**msg.get("config", {}), "enabled": False}, store.backup)
+        if not cfg["host"] or not cfg["user"]:
+            raise ValueError("Bitte Server und Benutzer eintragen")
+        message = await hass.async_add_executor_job(test_connection, cfg)
+    except (ValueError, BackupError) as err:
+        connection.send_error(msg["id"], "backup_failed", str(err))
+        return
+    connection.send_result(msg["id"], {"backup": public_backup(store.backup), "message": message})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "kochbuch/backup_run"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_backup_run(hass, connection, msg):
+    try:
+        message = await _manager(hass).async_run()
+    except BackupError as err:
+        connection.send_error(msg["id"], "backup_failed", str(err))
+        return
+    connection.send_result(
+        msg["id"], {"backup": public_backup(_store(hass).backup), "message": message}
+    )
