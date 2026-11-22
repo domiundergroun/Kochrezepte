@@ -2,13 +2,14 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.4.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.5.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
 - **Rezepte sammeln** mit Foto, Kategorie, Schlagworten, Zeiten, Schwierigkeit, Bewertung, Zutaten (mit Zwischenüberschriften) und Arbeitsschritten
 - **Startseite mit euren Kategorien** als große Kacheln – sonst nichts. Das Kochbuch startet leer, ohne Beispielrezepte
-- **Kategorien verwalten** in den Einstellungen: hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
+- **Unterkategorien**, z. B. Backen › Kuchen und Plätzchen: erscheinen als eigene Kacheln innerhalb der Hauptkategorie
+- **Kategorien verwalten** in den Einstellungen: Haupt- und Unterkategorien hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
 - **Bring!-Anbindung**: in den Einstellungen mit dem Bring!-Konto anmelden und die Liste wählen; im Rezept „Zu Bring! hinzufügen“ zeigt alle Zutaten, ihr wählt ab, was daheim ist, der Rest landet in Bring!
@@ -62,6 +63,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.5.0 | Unterkategorien (eine Ebene); neue Standard-Kategorien Kuchen und Plätzchen unter Backen sowie Salat; Einstellungen zeigen Kategorien als Baum |
 | 1.4.1 | Handy: Kopfzeile der Rezeptansicht passt wieder aufs Display |
 | 1.4.0 | Bring!-Anbindung mit Anmeldung und Listenauswahl; Auswahl-Dialog vor dem Hinzufügen der Zutaten; Einstellungen in einklappbaren Bereichen |
 | 1.3.0 | Zubereitung getrennt in Vorbereitung und Kochen; Rezepte exportieren/importieren (einzeln, Kategorie, alle); Sicherung als ZIP mit Fotos; automatisches Backup per FTP aufs Netzwerklaufwerk |

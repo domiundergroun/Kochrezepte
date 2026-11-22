@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.4.1";
+const KB_VERSION = "1.5.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -224,6 +224,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
   border-color: var(--kb-ink); box-shadow: inset 0 4px 0 var(--c, var(--kb-herb));
 }
 .toolbar { display: flex; align-items: center; gap: 12px; padding: 18px 0 6px; color: var(--kb-ink-soft); font-size: 14px; }
+.toolbar > span, .toolbar > label { white-space: nowrap; }
 .toolbar select {
   border: 0; background: transparent; font-weight: 700; color: var(--kb-ink); padding: 4px; border-radius: 6px;
 }
@@ -451,6 +452,34 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .cook .progress i.pp.on { background: var(--kb-saffron); }
 .cook .progress i.on:not(.pp) { background: #8CC2AE; }
 
+/* Unterkategorien */
+.cat-tile .ct-subs { position: relative; z-index: 1; font-size: 14px; opacity: .92; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin: 22px 0 6px; }
+.sub-tile { display: flex; align-items: center; gap: 14px; text-align: left; padding: 12px 14px; border-radius: 18px; border: 0; background: var(--kb-surface); box-shadow: var(--kb-shadow); border-left: 6px solid var(--c); }
+.sub-tile:hover { transform: translateY(-2px); }
+.sub-tile .sub-icon { width: 46px; height: 46px; border-radius: 14px; background: var(--c); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+.sub-tile b { display: block; font-family: var(--kb-display); font-size: 20px; font-weight: 700; line-height: 1.15; }
+.sub-tile small { color: var(--kb-ink-soft); font-size: 14px; }
+.sub-tile > span:nth-child(2) { flex: 1; min-width: 0; }
+.sub-tile .go { color: var(--kb-ink-soft); }
+.sec-title.small { font-size: 20px; margin-top: 26px; }
+.cat-group { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
+.cat-group + .cat-group { border-top: 1px dashed var(--kb-line); padding-top: 10px; }
+.cat-row { grid-template-columns: 44px 44px 1fr auto !important; grid-template-areas: "color prev name order" ". . icon parent"; }
+.cat-row > input[type=color] { grid-area: color; }
+.cat-row .prev { grid-area: prev; }
+.cat-row .name-cell { grid-area: name; }
+.cat-row .order { grid-area: order; }
+.cat-row .icon-sel { grid-area: icon; }
+.cat-row .parent-cell { grid-area: parent; min-width: 230px; display: flex; align-items: center; }
+.cat-row .parent-cell select { width: 100%; }
+.cat-row.sub { margin-left: 34px; position: relative; }
+.cat-row.sub::before { content: ""; position: absolute; left: -22px; top: -6px; width: 14px; height: 34px; border-left: 2px solid var(--kb-line); border-bottom: 2px solid var(--kb-line); border-bottom-left-radius: 8px; }
+.small-note { font-size: 13px; padding-left: 4px; }
+.add-sub { align-self: flex-start; margin-left: 34px; display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--kb-herb); font-weight: 700; padding: 6px 10px; border-radius: 10px; font-size: 14px; }
+.add-sub:hover { background: var(--kb-herb-soft); }
+.add-sub ha-icon { --mdc-icon-size: 18px; }
+
 /* Editor */
 .editor { max-width: 960px; margin: 0 auto; padding: 8px 20px 120px; }
 .editor h1.page { font-size: 34px; font-weight: 800; margin: 10px 0 22px; }
@@ -671,6 +700,13 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .f.full-m { grid-column: span 2; }
   .f { grid-column: span 2; }
   .irow { grid-template-columns: 24px 62px 74px 1fr 36px; gap: 6px; }
+  .cat-row { grid-template-columns: 44px 44px 1fr !important; grid-template-areas: "color prev name" "icon icon icon" "parent parent parent" "order order order"; }
+  .cat-row .parent-cell { min-width: 0; }
+  .cat-row .order { justify-content: flex-end; }
+  .cat-row.sub { margin-left: 18px; }
+  .cat-row.sub::before { left: -14px; width: 8px; }
+  .add-sub { margin-left: 18px; }
+  .sub-shelf { grid-template-columns: 1fr; }
   .crumbs button { font-size: 18px; padding: 0 8px; }
   .top.top-detail { gap: 2px; }
   .top.top-detail .crumbs button span, .top.top-detail [data-action=print] { display: none; }
@@ -681,9 +717,6 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .savebar .btn { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 10px; }
   .savebar .btn ha-icon { display: none; }
   .savebar .lbl-m { display: inline; }
-  .cat-row { grid-template-columns: 44px 44px 1fr; }
-  .cat-row select { grid-column: 1 / -1; }
-  .cat-row .order { grid-column: 1 / -1; justify-content: flex-end; }
   .shelf { grid-template-columns: 1fr 1fr; gap: 12px; }
   .cat-tile { min-height: 132px; padding: 16px; }
   .cat-tile .ct-name { font-size: 22px; }
@@ -865,6 +898,11 @@ class KochbuchPanel extends HTMLElement {
 
   _recipe(id) { return this.recipes.find((r) => r.id === id); }
   _cat(id) { return (this.settings.categories || []).find((c) => c.id === id); }
+  _parentOf(c) { return c && c.parent ? this._cat(c.parent) : null; }
+  _topCats(list = this.settings.categories || []) { const ids = new Set(list.map((c) => c.id)); return list.filter((c) => !c.parent || !ids.has(c.parent)); }
+  _subs(id, list = this.settings.categories || []) { return list.filter((c) => c.parent === id); }
+  _family(id) { return new Set([id, ...this._subs(id).map((c) => c.id)]); }
+  _catLabel(c) { const p = this._parentOf(c); return p ? `${p.name} › ${c.name}` : c.name; }
 
   /* ------------------------------------------------------------- Rendern */
   render() {
@@ -903,7 +941,7 @@ class KochbuchPanel extends HTMLElement {
     let list = this.recipes.filter((r) => {
       if (filter === "fav" && !r.favorite) return false;
       if (filter === "none" && r.category && this._cat(r.category)) return false;
-      if (!["all", "fav", "none"].includes(filter) && r.category !== filter) return false;
+      if (!["all", "fav", "none"].includes(filter) && !this._family(filter).has(r.category)) return false;
       if (!q) return true;
       const hay = [r.title, r.description, (r.tags || []).join(" "), (r.ingredients || []).map((i) => i.name).join(" ")].join(" ").toLowerCase();
       return q.split(/\s+/).every((w) => hay.includes(w));
@@ -952,14 +990,16 @@ class KochbuchPanel extends HTMLElement {
       return `${header}<main>${this._toolbar()}<section class="grid" id="grid">${this._renderCards()}</section></main>`;
     }
     const cats = this.settings.categories || [];
-    const inCat = (id) => this.recipes.filter((r) => r.category === id);
-    const tiles = cats.map((c) => {
+    const inCat = (id) => { const fam = this._family(id); return this.recipes.filter((r) => fam.has(r.category)); };
+    const tiles = this._topCats(cats).map((c) => {
       const list = inCat(c.id);
+      const subs = this._subs(c.id);
       const pics = list.filter((r) => r.image).slice(0, 3);
       return `<button class="cat-tile" style="--c:${esc(c.color)}" data-action="cat" data-id="${esc(c.id)}">
         <ha-icon class="bg" icon="${esc(c.icon)}"></ha-icon>
         ${pics.length ? `<span class="thumbs">${pics.map((r) => `<img src="${esc(r.image)}" alt="" loading="lazy">`).join("")}</span>` : ""}
         <span class="ct-name">${esc(c.name)}</span>
+        ${subs.length ? `<span class="ct-subs">${subs.map((x) => esc(x.name)).join(", ")}</span>` : ""}
         <span class="ct-count">${list.length ? `${list.length} ${list.length === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</span>
       </button>`;
     }).join("");
@@ -979,7 +1019,14 @@ class KochbuchPanel extends HTMLElement {
 
   _renderList() {
     const c = this._cat(this.filter);
-    const crumbs = this._crumbs(`<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><span class="here">${c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>` : ""}${esc(this._filterName(this.filter))}</span>`);
+    const parent = this._parentOf(c);
+    const sep = `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span>`;
+    const crumbs = this._crumbs(`${parent ? `${sep}<button class="crumb-cat" data-action="cat" data-id="${esc(parent.id)}"><span class="title-dot" style="background:${esc(parent.color)}"></span>${esc(parent.name)}</button>` : ""}${sep}<span class="here">${c ? `<span class="title-dot" style="background:${esc(c.color)}"></span>` : ""}${esc(this._filterName(this.filter))}</span>`);
+    const subs = c && !parent ? this._subs(c.id) : [];
+    const subTiles = subs.length ? `<section class="sub-shelf" aria-label="Unterkategorien">${subs.map((x) => {
+      const n = this.recipes.filter((r) => r.category === x.id).length;
+      return `<button class="sub-tile" style="--c:${esc(x.color)}" data-action="cat" data-id="${esc(x.id)}"><span class="sub-icon"><ha-icon icon="${esc(x.icon)}"></ha-icon></span><span><b>${esc(x.name)}</b><small>${n ? `${n} ${n === 1 ? "Rezept" : "Rezepte"}` : "Noch leer"}</small></span><ha-icon class="go" icon="mdi:chevron-right"></ha-icon></button>`;
+    }).join("")}</section>` : "";
     const header = this._top("list", `${crumbs}<div class="spacer"></div>
       <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="In ${esc(this._filterName(this.filter))} suchen" value="${esc(this.search)}" aria-label="Suchen"></label>
       <button class="icon-btn" data-action="import" title="Rezepte importieren" aria-label="Rezepte importieren"><ha-icon icon="mdi:tray-arrow-down"></ha-icon></button>
@@ -988,7 +1035,9 @@ class KochbuchPanel extends HTMLElement {
     const empty = !this._filtered().length && !this.search.trim();
     return `${header}<main>
       <h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${esc(this._filterName(this.filter))}</h1>
-      ${empty ? "" : this._toolbar(c && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}"><ha-icon icon="mdi:export-variant"></ha-icon>Kategorie exportieren</button>` : "")}
+      ${subTiles}
+      ${subs.length && !empty ? `<h2 class="sec-title small">Alle Rezepte in ${esc(c.name)}</h2>` : ""}
+      ${empty ? "" : this._toolbar(c && !this.search.trim() ? `<button class="btn small" data-action="export-cat" data-id="${esc(c.id)}" title="Kategorie exportieren" aria-label="Kategorie exportieren"><ha-icon icon="mdi:export-variant"></ha-icon><span class="lbl">Kategorie exportieren</span></button>` : "")}
       <section class="grid" id="grid">${empty ? this._emptyCategory() : this._renderCards()}</section>
     </main>`;
   }
@@ -997,7 +1046,7 @@ class KochbuchPanel extends HTMLElement {
     const c = this._cat(this.filter);
     const what = this.filter === "fav" ? "Noch keine Favoriten. Tippt bei einem Rezept auf das Herz." : `In „${esc(this._filterName(this.filter))}“ gibt es noch kein Rezept.`;
     return `<div class="empty" style="grid-column:1/-1"><div class="plate" ${c ? `style="color:${esc(c.color)}"` : ""}><ha-icon icon="${esc(c ? c.icon : this.filter === "fav" ? "mdi:heart-outline" : "mdi:chef-hat")}"></ha-icon></div>
-      <h2>${what}</h2>${this.filter === "fav" ? "" : `<p>Das erste Rezept landet direkt in dieser Kategorie.</p><div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button></div>`}</div>`;
+      <h2>${what}</h2>${this.filter === "fav" ? "" : `<p>${c && this._subs(c.id).length ? "Neue Rezepte könnt ihr direkt hier oder in einer Unterkategorie anlegen." : "Das erste Rezept landet direkt in dieser Kategorie."}</p><div class="row"><button class="btn primary" data-action="new"><ha-icon icon="mdi:pencil-plus"></ha-icon>Rezept schreiben</button></div>`}</div>`;
   }
 
   _resultLabel() {
@@ -1048,7 +1097,7 @@ class KochbuchPanel extends HTMLElement {
     const cookedN = (r.cooked || []).length;
 
     const header = this._top("top-detail", `
-      ${this._crumbs(c ? `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(c.id)}"><span class="title-dot" style="background:${esc(c.color)}"></span>${esc(c.name)}</button>` : "")}
+      ${this._crumbs([this._parentOf(c), c].filter(Boolean).map((x) => `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(x.id)}"><span class="title-dot" style="background:${esc(x.color)}"></span>${esc(x.name)}</button>`).join(""))}
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
       <button class="icon-btn" data-action="export-recipe" data-id="${esc(r.id)}" aria-label="Rezept exportieren" title="Rezept exportieren"><ha-icon icon="mdi:export-variant"></ha-icon></button>
@@ -1085,7 +1134,7 @@ class KochbuchPanel extends HTMLElement {
       <section class="hero" style="--c:${esc(color)}">
         <div class="pic">${this._pic(r, c)}</div><div class="shade"></div>
         <div class="title">
-          ${c ? `<span class="cat"><ha-icon icon="${esc(c.icon)}"></ha-icon>${esc(c.name)}</span>` : ""}
+          ${c ? `<span class="cat"><ha-icon icon="${esc(c.icon)}"></ha-icon>${esc(this._catLabel(c))}</span>` : ""}
           <h1>${esc(r.title)}</h1>
           ${r.author ? `<div class="by">von ${esc(r.author)}</div>` : ""}
         </div>
@@ -1249,7 +1298,11 @@ class KochbuchPanel extends HTMLElement {
         <div class="fields" style="margin-top:18px">
           <div class="f"><label for="f-title">Name des Rezepts</label><input id="f-title" class="title-input" data-f="title" value="${esc(d.title)}" placeholder="z. B. Omas Apfelkuchen"></div>
           <div class="f"><label for="f-desc">Kurzbeschreibung</label><textarea id="f-desc" data-f="description" rows="2" placeholder="Worauf darf man sich freuen?">${esc(d.description)}</textarea></div>
-          <div class="f s3"><label for="f-cat">Kategorie</label><select id="f-cat" data-f="category">${d.category && this._cat(d.category) ? "" : `<option value="" selected disabled>Bitte wählen</option>`}${cats.map((c) => `<option value="${esc(c.id)}" ${d.category === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+          <div class="f s3"><label for="f-cat">Kategorie</label><select id="f-cat" data-f="category">${d.category && this._cat(d.category) ? "" : `<option value="" selected disabled>Bitte wählen</option>`}${this._topCats(cats).map((c) => {
+            const subs = this._subs(c.id, cats);
+            const opt = (x, label) => `<option value="${esc(x.id)}" ${d.category === x.id ? "selected" : ""}>${label}</option>`;
+            return subs.length ? `<optgroup label="${esc(c.name)}">${opt(c, `${esc(c.name)} (allgemein)`)}${subs.map((x) => opt(x, esc(x.name))).join("")}</optgroup>` : opt(c, esc(c.name));
+          }).join("")}</select></div>
           <div class="f s3"><label>Schwierigkeit</label><div class="diff">${[1, 2, 3].map((n) => `<button data-action="diff" data-n="${n}" class="${d.difficulty === n ? "on" : ""}">${DIFFICULTY[n]}</button>`).join("")}</div></div>
           <div class="f s2"><label for="f-prep">Vorbereitung (Min)</label><input id="f-prep" type="number" min="0" data-f="prep_time" value="${d.prep_time || ""}" placeholder="0"></div>
           <div class="f s2"><label for="f-cook">Koch-/Backzeit (Min)</label><input id="f-cook" type="number" min="0" data-f="cook_time" value="${d.cook_time || ""}" placeholder="0"></div>
@@ -1365,24 +1418,41 @@ class KochbuchPanel extends HTMLElement {
     const total = (s.categories || []).length;
     const moved = (cat) => { let c = cat; for (let i = 0; i < 10 && s.moves && c in s.moves; i++) c = s.moves[c]; return c; };
     const used = (id) => this.recipes.filter((r) => moved(r.category) === id).length;
-    const cats = (s.categories || []).map((c, i) => `<div class="cat-row ${this._flashCat === i ? "flash" : ""}" data-cat="${i}">
+    const all = s.categories || [];
+    const tops = this._topCats(all);
+    const sib = (c) => all.map((x, j) => ({ x, j })).filter(({ x }) => (tops.includes(c) ? tops.includes(x) : x.parent === c.parent));
+    const row = (c, i, isSub) => {
+      const sibs = sib(c);
+      const pos = sibs.findIndex((o) => o.j === i);
+      const kids = this._subs(c.id, all).length;
+      const parentSel = kids ? `<span class="muted small-note">Hauptkategorie mit ${kids} ${kids === 1 ? "Unterkategorie" : "Unterkategorien"}</span>`
+        : `<select class="inp" data-c="parent" aria-label="Einordnung"><option value="">Hauptkategorie</option>${tops.filter((t) => t.id !== c.id).map((t) => `<option value="${esc(t.id)}" ${c.parent === t.id ? "selected" : ""}>Unterkategorie von ${esc(t.name || "…")}</option>`).join("")}</select>`;
+      return `<div class="cat-row ${isSub ? "sub" : ""} ${this._flashCat === i ? "flash" : ""}" data-cat="${i}">
         <input type="color" data-c="color" value="${esc(c.color)}" aria-label="Farbe von ${esc(c.name)}">
         <span class="prev" style="background:${esc(c.color)}"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>
-        <span class="name-cell"><input class="inp" data-c="name" value="${esc(c.name)}" aria-label="Name der Kategorie" placeholder="Name"><small>${used(c.id) === 1 ? "1 Rezept" : `${used(c.id)} Rezepte`}</small></span>
-        <select class="inp" data-c="icon" aria-label="Symbol">${[...new Set([c.icon, ...ICONS])].map((ic) => `<option value="${esc(ic)}" ${ic === c.icon ? "selected" : ""}>${esc(ic.replace("mdi:", ""))}</option>`).join("")}</select>
+        <span class="name-cell"><input class="inp" data-c="name" value="${esc(c.name)}" aria-label="Name der Kategorie" placeholder="${isSub ? "Name der Unterkategorie" : "Name"}"><small>${used(c.id) === 1 ? "1 Rezept" : `${used(c.id)} Rezepte`}</small></span>
         <span class="order">
-          <button class="icon-btn" data-action="cat-up" data-idx="${i}" aria-label="Nach oben" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
-          <button class="icon-btn" data-action="cat-down" data-idx="${i}" aria-label="Nach unten" ${i === total - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
+          <button class="icon-btn" data-action="cat-up" data-idx="${i}" aria-label="Nach oben" ${pos <= 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
+          <button class="icon-btn" data-action="cat-down" data-idx="${i}" aria-label="Nach unten" ${pos >= sibs.length - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
           <button class="icon-btn del" data-action="cat-del" data-idx="${i}" aria-label="${esc(c.name)} löschen"><ha-icon icon="mdi:trash-can-outline"></ha-icon></button>
         </span>
-      </div>`).join("");
+        <select class="inp icon-sel" data-c="icon" aria-label="Symbol">${[...new Set([c.icon, ...ICONS])].map((ic) => `<option value="${esc(ic)}" ${ic === c.icon ? "selected" : ""}>Symbol: ${esc(ic.replace("mdi:", ""))}</option>`).join("")}</select>
+        <span class="parent-cell">${parentSel}</span>
+      </div>`;
+    };
+    const cats = tops.map((c) => {
+      const i = all.indexOf(c);
+      const subs = this._subs(c.id, all);
+      return `<div class="cat-group">${row(c, i, false)}${subs.map((x) => row(x, all.indexOf(x), true)).join("")}
+        <button class="add-sub" data-action="cat-add-sub" data-id="${esc(c.id)}"><ha-icon icon="mdi:subdirectory-arrow-right"></ha-icon>Unterkategorie zu ${esc(c.name || "dieser Kategorie")}</button></div>`;
+    }).join("");
     this._flashCat = null;
     return `${this._top("", `${this._crumbs(`<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><span class="here">Einstellungen</span>`)}`)}
     <div class="editor">
-      ${this._fold("kategorien", "mdi:shape-outline", "Kategorien", `${total} ${total === 1 ? "Kategorie" : "Kategorien"}`, `
-        <p class="muted" style="margin:-6px 0 14px">So erscheinen die Kategorien auf der Startseite. Mit den Pfeilen ändert ihr die Reihenfolge.</p>
+      ${this._fold("kategorien", "mdi:shape-outline", "Kategorien", `${tops.length} ${tops.length === 1 ? "Kategorie" : "Kategorien"}${all.length > tops.length ? `, ${all.length - tops.length} ${all.length - tops.length === 1 ? "Unterkategorie" : "Unterkategorien"}` : ""}`, `
+        <p class="muted" style="margin:-6px 0 14px">So erscheinen die Kategorien auf der Startseite. Unterkategorien zeigt das Kochbuch innerhalb ihrer Hauptkategorie. Mit den Pfeilen ändert ihr die Reihenfolge.</p>
         <div class="rows">${cats || `<p class="muted">Noch keine Kategorien.</p>`}</div>
-        <div class="add-row"><button class="btn" data-action="cat-add"><ha-icon icon="mdi:plus"></ha-icon>Kategorie hinzufügen</button></div>
+        <div class="add-row"><button class="btn" data-action="cat-add"><ha-icon icon="mdi:plus"></ha-icon>Hauptkategorie hinzufügen</button></div>
       `)}
       ${this._fold("einkaufen", "mdi:cart-outline", "Einkaufen & Bring!", this._bringReady() ? `Bring!: ${esc((s.bring || {}).list_name || "verbunden")}` : (s.shopping_list ? esc(name(s.shopping_list)) : "Nicht eingerichtet"), `
         ${this._renderBring()}
@@ -1606,9 +1676,14 @@ class KochbuchPanel extends HTMLElement {
       inner = `<h2>Rezept löschen?</h2><p>„${esc(r?.title)}“ wird mit Foto endgültig aus dem Kochbuch entfernt.</p>
         <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="delete-confirm">Löschen</button></div>`;
     } else if (d.type === "cat-del") {
-      const others = this.settingsDraft.categories.filter((_, i) => i !== d.idx && _.name.trim());
-      inner = `<h2>„${esc(d.name)}“ löschen?</h2><p>${d.n === 1 ? "Ein Rezept gehört" : `${d.n} Rezepte gehören`} zu dieser Kategorie. Wohin sollen ${d.n === 1 ? "es" : "sie"} verschoben werden? Gelöscht wird erst beim Speichern der Einstellungen.</p>
-        <select class="inp" id="move-target">${others.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}<option value="">Ohne Kategorie lassen</option></select>
+      const all = this.settingsDraft.categories;
+      const goneId = all[d.idx].id;
+      const others = all.filter((x, i) => i !== d.idx && x.parent !== goneId && x.name.trim());
+      inner = `<h2>„${esc(d.name)}“ löschen?</h2>
+        ${d.kids ? `<p>${d.kids === 1 ? "Die Unterkategorie wird" : `Die ${d.kids} Unterkategorien werden`} danach zu ${d.kids === 1 ? "einer Hauptkategorie" : "Hauptkategorien"}.</p>` : ""}
+        ${d.n ? `<p>${d.n === 1 ? "Ein Rezept gehört" : `${d.n} Rezepte gehören`} direkt zu dieser Kategorie. Wohin sollen ${d.n === 1 ? "es" : "sie"} verschoben werden?</p>
+        <select class="inp" id="move-target">${others.map((c) => `<option value="${esc(c.id)}">${esc(((p) => (p ? `${p.name} › ` : ""))(all.find((x) => x.id === c.parent)) + c.name)}</option>`).join("")}<option value="">Ohne Kategorie lassen</option></select>` : ""}
+        <p class="hint">Gelöscht wird erst beim Speichern der Einstellungen.</p>
         <div class="row"><button class="btn" data-action="dlg-close">Behalten</button><button class="btn primary" style="background:var(--kb-tomato);border-color:var(--kb-tomato);color:#fff" data-action="cat-del-confirm">Kategorie löschen</button></div>`;
     } else if (d.type === "import") {
       const mode = d.mode || "url";
@@ -1892,10 +1967,23 @@ class KochbuchPanel extends HTMLElement {
       }
       case "cat-up": case "cat-down": {
         this._readSettings();
-        const j = idx + (a === "cat-up" ? -1 : 1);
-        this._move(this.settingsDraft.categories, idx, a === "cat-up" ? -1 : 1);
-        this._flashCat = j;
-        this._focusSel = `[data-cat="${j}"] [data-action="${a}"]:not([disabled])`;
+        const all = this.settingsDraft.categories;
+        const c = all[idx];
+        const tops = this._topCats(all);
+        const sibs = all.map((x, j) => ({ x, j })).filter(({ x }) => (tops.includes(c) ? tops.includes(x) : x.parent === c.parent));
+        const pos = sibs.findIndex((o) => o.j === idx);
+        const other = sibs[pos + (a === "cat-up" ? -1 : 1)];
+        if (other) { [all[idx], all[other.j]] = [all[other.j], all[idx]]; this._flashCat = other.j; this._focusSel = `[data-cat="${other.j}"] [data-action="${a}"]:not([disabled])`; }
+        this.render();
+        break;
+      }
+      case "cat-add-sub": {
+        this._readSettings();
+        const all = this.settingsDraft.categories;
+        const parent = all.find((x) => x.id === id);
+        const lastIdx = Math.max(...all.map((x, j) => (x.id === id || x.parent === id ? j : -1)));
+        all.splice(lastIdx + 1, 0, { id: Math.random().toString(36).slice(2, 10), name: "", icon: parent.icon, color: parent.color, parent: id });
+        this._focusSel = `[data-cat="${lastIdx + 1}"] [data-c="name"]`;
         this.render();
         break;
       }
@@ -1904,7 +1992,8 @@ class KochbuchPanel extends HTMLElement {
         const c = this.settingsDraft.categories[idx];
         const sd = this.settingsDraft;
         const n = this.recipes.filter((r) => { let x = r.category; for (let i = 0; i < 10 && sd.moves && x in sd.moves; i++) x = sd.moves[x]; return x === c.id; }).length;
-        if (n) { this.dialog = { type: "cat-del", idx, name: c.name, n }; this.render(); }
+        const kids = sd.categories.filter((x) => x.parent === c.id).length;
+        if (n || kids) { this.dialog = { type: "cat-del", idx, name: c.name, n, kids }; this.render(); }
         else { this.settingsDraft.categories.splice(idx, 1); this.render(); }
         break;
       }
@@ -1915,6 +2004,7 @@ class KochbuchPanel extends HTMLElement {
         sd.moves = sd.moves || {};
         for (const k of Object.keys(sd.moves)) if (sd.moves[k] === gone) sd.moves[k] = target;
         sd.moves[gone] = target;
+        sd.categories.forEach((x) => { if (x.parent === gone) x.parent = ""; });
         sd.categories.splice(this.dialog.idx, 1);
         this.dialog = null; this.render();
         break;
@@ -1967,6 +2057,7 @@ class KochbuchPanel extends HTMLElement {
 
   async _onChange(e) {
     const t = e.target;
+    if (t.dataset && t.dataset.c === "parent") { this._readSettings(); this.render(); return; }
     if (t.dataset && (t.dataset.c === "color" || t.dataset.c === "icon")) {
       const row = t.closest(".cat-row"); const prev = row && row.querySelector(".prev");
       if (prev && t.dataset.c === "color") prev.style.background = t.value;

@@ -22,6 +22,7 @@ from homeassistant.helpers.storage import Store
 from .backup import DEFAULT_BACKUP, clean_backup_config, public_backup
 from .const import (
     VERSION,
+    CATEGORIES_V15,
     DEFAULT_CATEGORIES,
     DEFAULT_SETTINGS,
     OLD_DEFAULT_CATEGORY_IDS,
@@ -117,6 +118,22 @@ def clean_recipe(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def normalize_categories(cats: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Nur eine Ebene: Unterkategorien müssen auf eine vorhandene Hauptkategorie zeigen."""
+    by_id = {c["id"]: c for c in cats}
+    for cat in cats:
+        parent = cat.get("parent") or ""
+        if parent == cat["id"] or parent not in by_id or by_id[parent].get("parent"):
+            parent = ""
+        cat["parent"] = parent
+    # Hauptkategorien mit Unterkategorien dürfen selbst keine Unterkategorie sein
+    has_children = {c["parent"] for c in cats if c["parent"]}
+    for cat in cats:
+        if cat["id"] in has_children:
+            cat["parent"] = ""
+    return cats
+
+
 class KochbuchStore:
     """Speichert Rezepte und Einstellungen in .storage."""
 
@@ -153,6 +170,28 @@ class KochbuchStore:
                 used = {r.get("category") for r in self.recipes.values()}
                 keep = [c for c in cats if c["id"] in used and c["id"] != "backen"]
                 self.settings["categories"] = copy.deepcopy(DEFAULT_CATEGORIES) + keep
+                await self._store.async_save(self._data())
+            if not settings.get("categories_v15"):
+                cats = self.settings.setdefault("categories", [])
+                names = {c.get("name", "").lower() for c in cats}
+                ids = {c.get("id") for c in cats}
+                for cat in CATEGORIES_V15:
+                    if cat["name"].lower() in names or cat["id"] in ids:
+                        continue
+                    new = copy.deepcopy(cat)
+                    if new.get("parent") and new["parent"] not in ids:
+                        parent = next((c for c in cats if c.get("name", "").lower() == "backen"), None)
+                        if parent is None:
+                            continue
+                        new["parent"] = parent["id"]
+                    if new.get("parent"):
+                        # direkt hinter die Hauptkategorie bzw. deren letzte Unterkategorie
+                        pos = max(i for i, c in enumerate(cats) if c["id"] == new["parent"] or c.get("parent") == new["parent"])
+                        cats.insert(pos + 1, new)
+                    else:
+                        cats.append(new)
+                    ids.add(new["id"])
+                self.settings["categories_v15"] = True
                 await self._store.async_save(self._data())
         await self.hass.async_add_executor_job(
             lambda: os.makedirs(self.images_path, exist_ok=True)
@@ -236,9 +275,10 @@ class KochbuchStore:
                         "name": _str(cat.get("name"), 60),
                         "icon": _str(cat.get("icon"), 60) or "mdi:food",
                         "color": _str(cat.get("color"), 20) or "#C8553D",
+                        "parent": _str(cat.get("parent"), 60),
                     }
                 )
-            self.settings["categories"] = cats
+            self.settings["categories"] = normalize_categories(cats)
         moves = settings.get("moves")
         if isinstance(moves, dict):
             valid = {c["id"] for c in self.settings.get("categories", [])}
@@ -337,10 +377,13 @@ class KochbuchStore:
         recipes = self.list()
         if ids:
             recipes = [r for r in recipes if r["id"] in ids]
+        all_cats = self.settings.get("categories", [])
         if category:
-            recipes = [r for r in recipes if r.get("category") == category]
+            family = {category} | {c["id"] for c in all_cats if c.get("parent") == category}
+            recipes = [r for r in recipes if r.get("category") in family]
         used_cats = {r.get("category") for r in recipes}
-        cats = [c for c in self.settings.get("categories", []) if c["id"] in used_cats]
+        used_cats |= {c.get("parent") for c in all_cats if c["id"] in used_cats and c.get("parent")}
+        cats = [c for c in all_cats if c["id"] in used_cats]
 
         def _build() -> list[dict[str, Any]]:
             out = []
@@ -405,10 +448,16 @@ class KochbuchStore:
                         "name": _str(cat.get("name"), 60),
                         "icon": _str(cat.get("icon"), 60) or "mdi:food",
                         "color": _str(cat.get("color"), 20) or "#2F5D50",
+                        "parent": _str(cat.get("parent"), 60),
+                        "_new": True,
                     }
                 )
                 mapping[cid] = new_id
                 new_cats += 1
+        for cat in local:
+            if cat.pop("_new", False) and cat.get("parent"):
+                cat["parent"] = mapping.get(cat["parent"], cat["parent"])
+        normalize_categories(local)
         fallback = local[0]["id"] if local else ""
         valid = {c["id"] for c in local}
 
