@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.7.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.7.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -64,6 +64,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.7.1 | Unterkategorien zeigen nur noch sich selbst als Überschrift (Pfeil führt zur Oberkategorie zurück); Favoriten-Kachel in Unterkategorien nur, wenn dort Favoriten gesetzt sind |
 | 1.7.0 | Neue Kategorie-Struktur (Vorspeisen, Hauptgericht mit Nudel/Reis/Braten/Suppe/Anderes, Beilage mit Salat, Backen mit Kuchen/Plätzchen, Nachspeise) inkl. automatischer Umstellung bestehender Rezepte; Favoriten in jeder Kategorie |
 | 1.6.2 | Rezeptkarten überall gleich groß (lange Namen werden getrennt); Kopfzeile auf dem Handy: Suchfeld in eigener Zeile, Knöpfe brechen nicht mehr um |
 | 1.6.1 | Abgehakte Zutaten rutschen ans Ende ihrer Gruppe; beim Abhaken springt die Seite nicht mehr nach oben |
