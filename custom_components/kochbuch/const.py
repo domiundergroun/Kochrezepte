@@ -1,7 +1,7 @@
 """Konstanten für die Kochbuch-Integration."""
 
 DOMAIN = "kochbuch"
-VERSION = "1.8.1"
+VERSION = "1.9.0"
 
 STORAGE_KEY = "kochbuch.rezepte"
 STORAGE_VERSION = 1
@@ -56,8 +56,14 @@ CATEGORY_ALIASES_V17 = {
 
 DEFAULT_SETTINGS = {
     "shopping_list": "",
+    # Wohin „Zur Einkaufsliste hinzufügen“ schickt: einkaufsliste | bring | todo ("" = automatisch)
+    "shopping_target": "",
+    "shopping_app": "",
     "default_servings": 4,
     "categories": DEFAULT_CATEGORIES,
     "categories_v17": True,
     "categories_v18": True,
 }
+
+EINKAUFSLISTE_DOMAIN = "einkaufsliste"
+SHOPPING_TARGETS = ("", "einkaufsliste", "bring", "todo")

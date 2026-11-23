@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_SETTINGS,
     IMAGES_DIR,
     IMAGES_URL,
+    SHOPPING_TARGETS,
     SIGNAL_UPDATED,
     STORAGE_KEY,
     STORAGE_VERSION,
@@ -293,6 +294,11 @@ class KochbuchStore:
     async def async_set_settings(self, settings: dict[str, Any]) -> dict[str, Any]:
         if "shopping_list" in settings:
             self.settings["shopping_list"] = _str(settings["shopping_list"], 200)
+        if "shopping_target" in settings:
+            target = _str(settings["shopping_target"], 20)
+            self.settings["shopping_target"] = target if target in SHOPPING_TARGETS else ""
+        if "shopping_app" in settings:
+            self.settings["shopping_app"] = _str(settings["shopping_app"], 200)
         if "default_servings" in settings:
             self.settings["default_servings"] = _int(
                 settings["default_servings"], 4, 1, 100

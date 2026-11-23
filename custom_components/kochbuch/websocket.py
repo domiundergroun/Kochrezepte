@@ -12,9 +12,10 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import DOMAIN, SIGNAL_UPDATED, VERSION
+from .const import DOMAIN, EINKAUFSLISTE_DOMAIN, SIGNAL_UPDATED, VERSION
 from .importer import async_import_url
 from .bring import BringClient, BringError
 from .backup import BackupError, clean_backup_config, public_backup, test_connection
@@ -51,6 +52,7 @@ def async_register(hass: HomeAssistant) -> None:
         ws_bring_select,
         ws_bring_logout,
         ws_bring_add,
+        ws_link,
     ):
         websocket_api.async_register_command(hass, handler)
 
@@ -339,3 +341,30 @@ async def ws_bring_add(hass, connection, msg):
             store.bring_auth = client.auth
             await store.async_save_bring_tokens()
     connection.send_result(msg["id"], {"added": count, "list_name": info.get("list_name", "")})
+
+
+# ------------------------------------------------ Verbindung zur Einkaufsliste
+def link_status(hass: HomeAssistant) -> dict[str, Any]:
+    """Ist das Kochbuch mit der Einkaufsliste-Integration verbunden?"""
+    settings = _store(hass).settings
+    entity_id = settings.get("shopping_app") or ""
+    target = settings.get("shopping_target") or ""
+    platform_ok = False
+    if entity_id:
+        entry = er.async_get(hass).async_get(entity_id)
+        platform_ok = bool(entry and entry.platform == EINKAUFSLISTE_DOMAIN)
+    state = hass.states.get(entity_id) if entity_id else None
+    available = bool(state and state.state not in ("unavailable", "unknown"))
+    return {
+        "target": target,
+        "entity_id": entity_id,
+        "name": (state.attributes.get("friendly_name") if state else "") or entity_id,
+        "connected": target == "einkaufsliste" and platform_ok and available,
+        "version": VERSION,
+    }
+
+
+@websocket_api.websocket_command({vol.Required("type"): "kochbuch/link"})
+@callback
+def ws_link(hass, connection, msg):
+    connection.send_result(msg["id"], link_status(hass))

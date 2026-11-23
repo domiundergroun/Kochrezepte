@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.8.1";
+const KB_VERSION = "1.9.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -681,6 +681,29 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
 :host([dark]) .serv-quick button.on { color: #0E1A15; }
 .serv-note { color: var(--kb-ink-soft); font-size: 14px; margin: 0; text-align: center; }
 .shop-for { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--kb-ink); }
+
+/* Einkaufsliste-Ziel */
+.target-opts { display: grid; gap: 8px; }
+.target-opt { display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--kb-line); background: var(--kb-paper); }
+.target-opt:hover { border-color: var(--kb-herb); }
+.target-opt.on { border-color: var(--kb-herb); background: var(--kb-herb-soft); }
+.target-opt > ha-icon { color: var(--kb-herb); flex: none; }
+.to-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--kb-line); flex: none; position: relative; background: var(--kb-surface); }
+.target-opt.on .to-radio { border-color: var(--kb-herb); }
+.target-opt.on .to-radio::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--kb-herb); }
+.to-text { display: flex; flex-direction: column; min-width: 0; }
+.to-text small { color: var(--kb-ink-soft); font-size: 13px; }
+.target-body { margin-top: 14px; }
+.lamp { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: 0; flex: none; }
+.lamp.on { background: #2EB82E; box-shadow: 0 0 0 3px rgba(46,184,46,.22), 0 0 8px rgba(46,184,46,.8); animation: glow 2.4s ease-in-out infinite; }
+.lamp.off { background: var(--kb-tomato); box-shadow: 0 0 0 3px color-mix(in srgb, var(--kb-tomato) 22%, transparent); }
+@keyframes glow { 50% { box-shadow: 0 0 0 5px rgba(46,184,46,.12), 0 0 12px rgba(46,184,46,.9); } }
+.link-box { display: flex; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 14px; background: var(--kb-paper); }
+.link-box.ok { background: color-mix(in srgb, #2EB82E 10%, var(--kb-paper)); }
+.link-box .lamp { margin-top: 6px; }
+.link-box div { display: flex; flex-direction: column; }
+.link-box small { color: var(--kb-ink-soft); }
+.fold-text small .lamp { width: 8px; height: 8px; margin-right: 6px; }
 
 /* Dialoge */
 .scrim {
@@ -1585,13 +1608,7 @@ class KochbuchPanel extends HTMLElement {
         <div class="rows">${cats || `<p class="muted">Noch keine Kategorien.</p>`}</div>
         <div class="add-row"><button class="btn" data-action="cat-add"><ha-icon icon="mdi:plus"></ha-icon>Hauptkategorie hinzufügen</button></div>
       `)}
-      ${this._fold("einkaufen", "mdi:cart-outline", "Einkaufen & Bring!", this._bringReady() ? `Bring!: ${esc((s.bring || {}).list_name || "verbunden")}` : (s.shopping_list ? esc(name(s.shopping_list)) : "Nicht eingerichtet"), `
-        ${this._renderBring()}
-        <div class="fields" style="margin-top:18px">
-          <div class="f s3"><label for="s-list">Einkaufsliste in Home Assistant${this._bringReady() ? " (zusätzlich)" : ""}</label>
-            <select id="s-list" data-s="shopping_list"><option value="">Keine</option>${todos.map((e) => `<option value="${esc(e)}" ${s.shopping_list === e ? "selected" : ""}>${esc(name(e))}</option>`).join("")}</select></div>
-          <div class="f s3"><label for="s-serv">Standard-Portionen für neue Rezepte</label><input id="s-serv" type="number" min="1" data-s="default_servings" value="${s.default_servings || 4}"></div>
-        </div>`)}
+      ${this._fold("einkaufen", "mdi:cart-outline", "Einkaufsliste", this._shopSummary(s), this._renderShopSettings(s, todos, name))}
       ${this._fold("austausch", "mdi:swap-horizontal", "Rezepte austauschen", "Exportieren und importieren", `
         <p class="muted" style="margin:-6px 0 14px">Gebt Rezepte als Datei weiter, z. B. an Freunde mit eigenem Kochbuch, oder übernehmt Rezepte aus so einer Datei. Fotos sind enthalten. Einzelne Rezepte oder ganze Kategorien exportiert ihr direkt dort über <ha-icon icon="mdi:export-variant" style="--mdc-icon-size:16px;vertical-align:-3px"></ha-icon>.</p>
         <div class="settings-actions">
@@ -1615,6 +1632,87 @@ class KochbuchPanel extends HTMLElement {
       </button>
       ${open ? `<div class="fold-body">${body}</div>` : ""}
     </section>`;
+  }
+
+  _appEntities() {
+    const reg = this._hass.entities || {};
+    return Object.keys(this._hass.states).filter((e) => e.startsWith("todo.") && reg[e]?.platform === "einkaufsliste").sort();
+  }
+
+  _appEntity(st = this.settings) {
+    const apps = this._appEntities();
+    return apps.includes(st.shopping_app) ? st.shopping_app : apps[0] || "";
+  }
+
+  /** Wohin die Zutaten gehen: {kind: "einkaufsliste"|"bring"|"todo"|"", entity} */
+  _shopTarget(st = this.settings) {
+    const t = st.shopping_target || "";
+    const app = this._appEntity(st);
+    const bring = !!(st.bring && st.bring.email && st.bring.list_uuid);
+    const todo = st === this.settings ? this._todoTarget() : st.shopping_list;
+    if (t === "einkaufsliste") return { kind: app ? "einkaufsliste" : "", entity: app };
+    if (t === "bring") return { kind: bring ? "bring" : "" };
+    if (t === "todo") return { kind: todo ? "todo" : "", entity: todo };
+    if (app) return { kind: "einkaufsliste", entity: app };
+    if (bring) return { kind: "bring" };
+    return { kind: todo ? "todo" : "", entity: todo };
+  }
+
+  _appConnected(st = this.settings) {
+    const t = this._shopTarget(st);
+    if (t.kind !== "einkaufsliste") return false;
+    const state = this._hass.states[t.entity];
+    return !!state && !["unavailable", "unknown"].includes(state.state);
+  }
+
+  _shopSummary(st) {
+    const t = this._shopTarget(st);
+    const fname = (e) => this._hass.states[e]?.attributes?.friendly_name || e;
+    if (t.kind === "einkaufsliste") {
+      return this._appConnected(st)
+        ? `<span class="lamp on"></span>Verbunden mit Einkaufsliste „${esc(fname(t.entity))}“`
+        : `<span class="lamp off"></span>Einkaufsliste nicht erreichbar`;
+    }
+    if (t.kind === "bring") return `Bring!: ${esc((st.bring || {}).list_name || "verbunden")}`;
+    if (t.kind === "todo") return esc(fname(t.entity));
+    return "Nicht eingerichtet";
+  }
+
+  _renderShopSettings(st, todos, name) {
+    const apps = this._appEntities();
+    const t = st.shopping_target || (apps.length ? "einkaufsliste" : this._bringReady() ? "bring" : "todo");
+    const opt = (id, icon, title, sub, disabled) => `<button type="button" class="target-opt ${t === id ? "on" : ""}" data-action="shop-target-set" data-t="${id}" ${disabled ? "disabled" : ""} aria-pressed="${t === id}">
+        <span class="to-radio"></span><ha-icon icon="${icon}"></ha-icon><span class="to-text"><b>${title}</b><small>${sub}</small></span></button>`;
+    let body = "";
+    if (t === "einkaufsliste") {
+      const ent = this._appEntity(st);
+      const ok = this._appConnected({ ...st, shopping_target: "einkaufsliste" });
+      body = apps.length ? `
+        <div class="link-box ${ok ? "ok" : "bad"}">
+          <span class="lamp ${ok ? "on" : "off"}"></span>
+          <div><b>${ok ? "Verbunden" : "Nicht erreichbar"}</b><small>${ok ? `Zutaten aus Rezepten landen direkt auf „${esc(name(ent))}“ – samt Menge als Beschreibung. Synchronisiert eure Einkaufsliste mit Bring! oder Alexa, kommen sie dort ebenfalls an.` : "Die Liste meldet sich gerade nicht. Ist die Einkaufsliste-Integration eingerichtet und Home Assistant gestartet?"}</small></div>
+        </div>
+        ${apps.length > 1 ? `<div class="fields" style="margin-top:14px"><div class="f s3"><label for="s-app">Liste</label>
+          <select id="s-app" data-s="shopping_app">${apps.map((e) => `<option value="${esc(e)}" ${e === ent ? "selected" : ""}>${esc(name(e))}</option>`).join("")}</select></div></div>` : `<input type="hidden" data-s="shopping_app" value="${esc(ent)}">`}`
+        : `<p class="hint" style="color:var(--kb-tomato)">Die Integration „Einkaufsliste“ wurde nicht gefunden. Installiert sie über HACS (domiundergroun/Einkaufsliste) und richtet sie ein.</p>`;
+    } else if (t === "bring") {
+      body = this._renderBring();
+    } else {
+      body = `<div class="fields"><div class="f s3"><label for="s-list">To-do-Liste in Home Assistant</label>
+        <select id="s-list" data-s="shopping_list"><option value="">Bitte wählen</option>${todos.filter((e) => !apps.includes(e)).map((e) => `<option value="${esc(e)}" ${st.shopping_list === e ? "selected" : ""}>${esc(name(e))}</option>`).join("")}</select></div></div>`;
+    }
+    return `
+      <p class="muted" style="margin:-6px 0 12px">Wohin sollen die Zutaten bei „Zur Einkaufsliste hinzufügen“?</p>
+      <div class="target-opts">
+        ${opt("einkaufsliste", "mdi:cart-heart", "Unsere Einkaufsliste", apps.length ? "Die Einkaufsliste-App in Home Assistant" : "Nicht installiert", false)}
+        ${opt("bring", "mdi:basket-outline", "Bring! direkt", "Ohne Einkaufsliste-App, mit eigenem Bring!-Login", false)}
+        ${opt("todo", "mdi:format-list-checks", "Andere Liste", "Eine beliebige To-do-Liste in Home Assistant", false)}
+      </div>
+      <input type="hidden" data-s="shopping_target" value="${esc(t)}">
+      <div class="target-body">${body}</div>
+      <div class="fields" style="margin-top:18px">
+        <div class="f s3"><label for="s-serv">Standard-Portionen für neue Rezepte</label><input id="s-serv" type="number" min="1" data-s="default_servings" value="${st.default_servings || 4}"></div>
+      </div>`;
   }
 
   _renderBring() {
@@ -1851,12 +1949,12 @@ class KochbuchPanel extends HTMLElement {
           <div class="row"><button class="btn" data-action="dlg-close">Abbrechen</button><button class="btn primary" data-action="shop-next"><ha-icon icon="mdi:arrow-right"></ha-icon>Weiter zu den Zutaten</button></div>`;
       } else {
         const items = this._shopItems(d);
-        const both = this._bringReady() && this._todoTarget();
+        const both = false;
         const n = items.filter((i) => i.name && i.on).length;
         const total = items.filter((i) => i.name).length;
         const label = "zur Einkaufsliste hinzufügen";
         inner = `<h2>Was fehlt noch?</h2>
-          <p>Mengen <button class="linkish shop-for" data-action="shop-back"><ha-icon icon="mdi:account-group-outline" style="--mdc-icon-size:18px"></ha-icon>für ${d.servings} ${esc(word)} (ändern)</button>. Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Einkaufsliste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : "auf die Einkaufsliste"}.</p>
+          <p>Mengen <button class="linkish shop-for" data-action="shop-back"><ha-icon icon="mdi:account-group-outline" style="--mdc-icon-size:18px"></ha-icon>für ${d.servings} ${esc(word)} (ändern)</button>. Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Einkaufsliste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : d.entity ? `auf eure Einkaufsliste „${esc(this._hass.states[d.entity]?.attributes?.friendly_name || d.entity)}“` : "auf die Einkaufsliste"}.</p>
           ${both ? `<div class="seg"><button class="${d.target === "bring" ? "on" : ""}" data-action="shop-target" data-t="bring">${esc(this.settings.bring?.list_name || "Bring!")}</button><button class="${d.target === "todo" ? "on" : ""}" data-action="shop-target" data-t="todo">${esc(this._hass.states[this._todoTarget()]?.attributes?.friendly_name || "Home Assistant")}</button></div>` : ""}
           <div class="shop-head"><span>${n} von ${total} ausgewählt</span><span><button class="linkish" data-action="shop-all" data-on="1">Alle</button><button class="linkish" data-action="shop-all" data-on="0">Keine</button></span></div>
           <ul class="shop-list">${orderWithin(items.map((it) => ({ ...it, heading: !!it.group })), (e) => !e.on).map((it) => it.group ? `<li class="shop-group">${esc(it.group)}</li>`
@@ -1909,9 +2007,9 @@ class KochbuchPanel extends HTMLElement {
 
   _openShop() {
     const r = this._recipe(this.view.id);
-    const target = this._bringReady() ? "bring" : "todo";
-    if (target === "todo" && !this._todoTarget()) { this._showToast("Keine Einkaufsliste eingerichtet – meldet euch in den Einstellungen bei Bring! an.", true); return; }
-    this.dialog = { type: "shop", step: "servings", recipeId: r.id, servings: this.servings || r.servings, off: new Set(this.checked), target };
+    const t = this._shopTarget();
+    if (!t.kind) { this._showToast("Keine Einkaufsliste eingerichtet – wählt sie in den Einstellungen unter „Einkaufsliste“.", true); return; }
+    this.dialog = { type: "shop", step: "servings", recipeId: r.id, servings: this.servings || r.servings, off: new Set(this.checked), target: t.kind, entity: t.entity };
     this.render();
   }
 
@@ -1961,9 +2059,19 @@ class KochbuchPanel extends HTMLElement {
         }) });
         where = res.list_name ? `die Einkaufsliste „${res.list_name}“` : "die Einkaufsliste";
       } else {
-        const entity = this._todoTarget();
-        for (const i of items) await this._hass.callService("todo", "add_item", { item: i.spec ? `${i.name} (${i.spec})` : i.name }, { entity_id: entity });
-        where = `„${this._hass.states[entity]?.attributes?.friendly_name || entity}“`;
+        const entity = d.entity || this._todoTarget();
+        const st = this._hass.states[entity];
+        if (!st || st.state === "unavailable") throw new Error("Die Einkaufsliste ist gerade nicht erreichbar");
+        // Listen mit Beschreibungsfeld (z. B. unsere Einkaufsliste) bekommen die Menge als Beschreibung
+        const withDesc = ((st.attributes.supported_features || 0) & 64) === 64;
+        for (const i of items) {
+          const [nm, ...rest] = i.name.split(/,\s*/);
+          const name = d.target === "einkaufsliste" ? nm.trim() || i.name : i.name;
+          const spec = d.target === "einkaufsliste" ? [i.spec, rest.join(", ")].filter(Boolean).join(", ") : i.spec;
+          const data = withDesc ? { item: name, ...(spec ? { description: spec } : {}) } : { item: spec ? `${name} (${spec})` : name };
+          await this._hass.callService("todo", "add_item", data, { entity_id: entity });
+        }
+        where = `die Einkaufsliste „${st.attributes.friendly_name || entity}“`;
       }
       this.dialog = null; this.render();
       this._showToast(`${items.length} ${items.length === 1 ? "Zutat" : "Zutaten"} auf ${where}`);
@@ -2095,6 +2203,7 @@ class KochbuchPanel extends HTMLElement {
       case "shop-next": this.dialog.step = "list"; this.servings = this.dialog.servings; this.render(); break;
       case "shop-back": this.dialog.step = "servings"; this.dialog.error = null; this.render(); break;
       case "shop-target": this.dialog.target = el.dataset.t; this.render(); break;
+      case "shop-target-set": this._readSettings(); this.settingsDraft.shopping_target = el.dataset.t; this.render(); break;
       case "shop-go": this._sendShop(); break;
       case "fold": this._readSettings(); if (this.folds.has(id)) this.folds.delete(id); else this.folds.add(id); try { localStorage.setItem("kochbuch-folds", JSON.stringify([...this.folds])); } catch (e) { /* egal */ } this.render(); break;
       case "bring-login": {
