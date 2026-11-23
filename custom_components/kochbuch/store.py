@@ -167,6 +167,9 @@ class KochbuchStore:
             if not settings.get("categories_v17"):
                 self._migrate_categories_v17()
                 await self._store.async_save(self._data())
+            if not settings.get("categories_v18"):
+                self._migrate_categories_v18()
+                await self._store.async_save(self._data())
         await self.hass.async_add_executor_job(
             lambda: os.makedirs(self.images_path, exist_ok=True)
         )
@@ -199,6 +202,33 @@ class KochbuchStore:
                 recipe["category"] = remap[recipe["category"]]
         self.settings["categories_v17"] = True
         _LOGGER.info("Kochbuch: Kategorien auf neue Struktur umgestellt (%s zugeordnet)", len(remap))
+
+    def _migrate_categories_v18(self) -> None:
+        """1.8.0: Unterkategorie „Soßen“ unter Hauptgericht ergänzen (vor „Anderes“)."""
+        cats = self.settings.setdefault("categories", [])
+        self.settings["categories_v18"] = True
+        if any(c.get("name", "").strip().lower() in ("soßen", "sossen", "saucen") for c in cats):
+            return
+        main = next(
+            (c for c in cats if c["id"] == "hauptgericht" and not c.get("parent")),
+            next((c for c in cats if c.get("name", "").strip().lower() == "hauptgericht" and not c.get("parent")), None),
+        )
+        if main is None:
+            return
+        new = next(dict(c) for c in DEFAULT_CATEGORIES if c["id"] == "sossen")
+        new["parent"] = main["id"]
+        if any(c["id"] == new["id"] for c in cats):
+            new["id"] = uuid.uuid4().hex[:8]
+        children = [i for i, c in enumerate(cats) if c.get("parent") == main["id"]]
+        anderes = next((i for i in children if cats[i].get("name", "").strip().lower() == "anderes"), None)
+        if anderes is not None:
+            pos = anderes
+        elif children:
+            pos = children[-1] + 1
+        else:
+            pos = cats.index(main) + 1
+        cats.insert(pos, new)
+        _LOGGER.info("Kochbuch: Unterkategorie „Soßen“ unter %s ergänzt", main["name"])
 
     async def _async_save(self) -> None:
         await self._store.async_save(self._data())

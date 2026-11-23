@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.7.5";
+const KB_VERSION = "1.8.0";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>

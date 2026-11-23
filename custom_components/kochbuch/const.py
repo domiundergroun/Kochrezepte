@@ -1,7 +1,7 @@
 """Konstanten für die Kochbuch-Integration."""
 
 DOMAIN = "kochbuch"
-VERSION = "1.7.5"
+VERSION = "1.8.0"
 
 STORAGE_KEY = "kochbuch.rezepte"
 STORAGE_VERSION = 1
@@ -24,6 +24,7 @@ DEFAULT_CATEGORIES = [
     {"id": "reis", "name": "Reis", "icon": "mdi:rice", "color": "#B9975B", "parent": "hauptgericht"},
     {"id": "braten", "name": "Braten", "icon": "mdi:food-turkey", "color": "#8A5A3B", "parent": "hauptgericht"},
     {"id": "suppen", "name": "Suppe", "icon": "mdi:pot-steam", "color": "#3F7F6E", "parent": "hauptgericht"},
+    {"id": "sossen", "name": "Soßen", "icon": "mdi:bowl-mix", "color": "#B5452E", "parent": "hauptgericht"},
     {"id": "anderes", "name": "Anderes", "icon": "mdi:food", "color": "#9C6644", "parent": "hauptgericht"},
     {"id": "beilage", "name": "Beilage", "icon": "mdi:french-fries", "color": "#6A994E"},
     {"id": "salat", "name": "Salat", "icon": "mdi:leaf", "color": "#5E8C3F", "parent": "beilage"},
@@ -42,7 +43,8 @@ CATEGORY_ALIASES_V17 = {
     "reis": ["reis"],
     "braten": ["braten", "fleisch"],
     "suppen": ["suppen", "suppe"],
-    "anderes": ["anderes", "sossen", "soßen", "sauce", "saucen & dips"],
+    "sossen": ["sossen", "soßen", "sauce", "saucen & dips", "saucen"],
+    "anderes": ["anderes"],
     "beilage": ["beilage", "beilagen"],
     "salat": ["salat", "salate"],
     "backen": ["backen"],
@@ -57,4 +59,5 @@ DEFAULT_SETTINGS = {
     "default_servings": 4,
     "categories": DEFAULT_CATEGORIES,
     "categories_v17": True,
+    "categories_v18": True,
 }

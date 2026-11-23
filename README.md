@@ -2,13 +2,13 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.7.5-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.8.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
 - **Rezepte sammeln** mit Foto, Kategorie, Schlagworten, Zeiten, Schwierigkeit, Bewertung, Zutaten (mit Zwischenüberschriften) und Arbeitsschritten
 - **Startseite mit euren Kategorien** als große Kacheln – sonst nichts. Das Kochbuch startet leer, ohne Beispielrezepte
-- **Kategorien mit Unterkategorien**: Vorspeisen; Hauptgericht (Nudel, Reis, Braten, Suppe, Anderes); Beilage (Salat); Backen (Kuchen, Plätzchen); Nachspeise – alles in den Einstellungen änderbar
+- **Kategorien mit Unterkategorien**: Vorspeisen; Hauptgericht (Nudel, Reis, Braten, Suppe, Soßen, Anderes); Beilage (Salat); Backen (Kuchen, Plätzchen); Nachspeise – alles in den Einstellungen änderbar
 - **Favoriten zuerst**: mit dem Herz markierte Rezepte stehen in jeder Kategorie oben
 - **Kategorien verwalten** in den Einstellungen: Haupt- und Unterkategorien hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
@@ -64,6 +64,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.8.0 | Neue Unterkategorie „Soßen“ unter Hauptgericht (wird bei bestehenden Installationen einmalig ergänzt) |
 | 1.7.5 | Einstellungen: Sicherung und automatisches Backup in einem Bereich zusammengefasst |
 | 1.7.4 | Startseite: Kacheln zeigen nur noch die Hauptkategorie, ohne Liste der Unterkategorien |
 | 1.7.3 | Hauptkategorien zeigen nur ihre eigenen Rezepte, Rezepte der Unterkategorien nur dort (Suche findet weiterhin alles) |
