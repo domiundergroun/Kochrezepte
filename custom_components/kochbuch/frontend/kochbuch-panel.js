@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.7.4";
+const KB_VERSION = "1.7.5";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -635,6 +635,9 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
 .fold-head .chev { color: var(--kb-ink-soft); transition: transform .2s ease; }
 .fold.open .fold-head .chev { transform: rotate(180deg); }
 .fold-body { padding: 4px 22px 22px; animation: fade .2s ease; }
+.fold-sub { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; margin: 0 0 12px; }
+.fold-sub ha-icon { color: var(--kb-herb); --mdc-icon-size: 20px; }
+.fold-sub.divided { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--kb-line); }
 .fold.open .fold-head { border-bottom: 1px solid var(--kb-line); margin-bottom: 14px; }
 /* Bring! */
 .btn.bring { background: #EE524F; border-color: #EE524F; color: #fff; }
@@ -1658,14 +1661,14 @@ class KochbuchPanel extends HTMLElement {
     if (cfg.enabled && cfg.host) status += `<span>Nächstes Backup: ${cfg.freq === "weekly" ? "montags" : "täglich"} um ${esc(cfg.time)} Uhr</span>`;
     const o = (v, cur, label) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${label}</option>`;
     const autoSum = cfg.enabled && cfg.host ? `Aktiv, ${cfg.freq === "weekly" ? "montags" : "täglich"} um ${esc(cfg.time)} Uhr${last && !last.ok ? " – letztes Backup fehlgeschlagen" : ""}` : "Aus";
-    return `${this._fold("sicherung", "mdi:folder-zip-outline", "Sicherung", "Herunterladen und einspielen", `
+    return `${this._fold("sicherung", "mdi:backup-restore", "Sicherung & automatisches Backup", `Automatisches Backup: ${autoSum}`, `
+        <h3 class="fold-sub">Sicherung von Hand</h3>
         <p class="muted" style="margin:-6px 0 14px">Eine komplette Sicherung als ZIP-Datei: alle Rezepte, Fotos, Kategorien und Einstellungen. Damit stellt ihr das Kochbuch z. B. nach einer Neuinstallation wieder her.</p>
         <div class="settings-actions">
           <button class="btn" data-action="backup-download" ${busy ? "disabled" : ""}><ha-icon icon="mdi:folder-zip-outline"></ha-icon>${busy === "download" ? "Wird erstellt …" : "Sicherung herunterladen"}</button>
           <label class="btn" tabindex="0"><ha-icon icon="mdi:backup-restore"></ha-icon>Sicherung einspielen<input type="file" accept=".zip,.json,application/zip,application/json" id="backup-file" hidden></label>
         </div>
-      `)}
-      ${this._fold("nas", "mdi:nas", "Automatisches Backup aufs Netzwerklaufwerk", autoSum, `
+        <h3 class="fold-sub divided"><ha-icon icon="mdi:nas"></ha-icon>Automatisches Backup aufs Netzwerklaufwerk</h3>
         <p class="muted" style="margin:-6px 0 14px">Legt regelmäßig eine Sicherung per FTP auf eurem NAS ab (z. B. Synology, QNAP, Fritz!NAS). Ältere Sicherungen werden automatisch gelöscht.</p>
         <label class="switch"><input type="checkbox" id="b-enabled" ${b.enabled ? "checked" : ""}><span class="track"></span>Automatisches Backup aktiv</label>
         <div class="fields" style="margin-top:16px">
