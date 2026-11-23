@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.8.0";
+const KB_VERSION = "1.8.1";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -806,6 +806,7 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .savebar .btn { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 10px; }
   .savebar .btn ha-icon { display: none; }
   .savebar .lbl-m { display: inline; }
+  .dialog .row .btn { flex: 1 1 auto; justify-content: center; text-align: center; white-space: normal; height: auto; min-height: 44px; padding: 8px 14px; line-height: 1.2; }
   .shelf { grid-template-columns: 1fr 1fr; gap: 12px; }
   .cat-tile { min-height: 132px; padding: 16px; }
   .cat-tile .ct-name { font-size: 22px; }
@@ -1283,8 +1284,7 @@ class KochbuchPanel extends HTMLElement {
             </div></div>
           ${(r.ingredients || []).length ? `<ul class="ing-list">${ingHtml}</ul>
           <div class="ing-actions">
-            ${this._bringReady() ? `<button class="btn bring" data-action="shop"><ha-icon icon="mdi:cart-plus"></ha-icon>Zu Bring! hinzufügen</button>`
-              : `<button class="btn primary" data-action="shop"><ha-icon icon="mdi:cart-plus"></ha-icon>Auf die Einkaufsliste</button>`}
+            <button class="btn primary" data-action="shop"><ha-icon icon="mdi:cart-plus"></ha-icon>Zur Einkaufsliste hinzufügen</button>
           </div>` : `<p class="muted">Noch keine Zutaten eingetragen.</p>`}
         </section>
         <section aria-label="Zubereitung">
@@ -1854,15 +1854,15 @@ class KochbuchPanel extends HTMLElement {
         const both = this._bringReady() && this._todoTarget();
         const n = items.filter((i) => i.name && i.on).length;
         const total = items.filter((i) => i.name).length;
-        const label = d.target === "bring" ? "zu Bring! hinzufügen" : "auf die Einkaufsliste";
+        const label = "zur Einkaufsliste hinzufügen";
         inner = `<h2>Was fehlt noch?</h2>
-          <p>Mengen <button class="linkish shop-for" data-action="shop-back"><ha-icon icon="mdi:account-group-outline" style="--mdc-icon-size:18px"></ha-icon>für ${d.servings} ${esc(word)} (ändern)</button>. Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Bring!-Liste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : "auf die Einkaufsliste"}.</p>
-          ${both ? `<div class="seg"><button class="${d.target === "bring" ? "on" : ""}" data-action="shop-target" data-t="bring">Bring!</button><button class="${d.target === "todo" ? "on" : ""}" data-action="shop-target" data-t="todo">Home Assistant</button></div>` : ""}
+          <p>Mengen <button class="linkish shop-for" data-action="shop-back"><ha-icon icon="mdi:account-group-outline" style="--mdc-icon-size:18px"></ha-icon>für ${d.servings} ${esc(word)} (ändern)</button>. Wählt ab, was ihr daheim habt. Der Rest kommt ${d.target === "bring" ? `auf eure Einkaufsliste${this.settings.bring?.list_name ? ` „${esc(this.settings.bring.list_name)}“` : ""}` : "auf die Einkaufsliste"}.</p>
+          ${both ? `<div class="seg"><button class="${d.target === "bring" ? "on" : ""}" data-action="shop-target" data-t="bring">${esc(this.settings.bring?.list_name || "Bring!")}</button><button class="${d.target === "todo" ? "on" : ""}" data-action="shop-target" data-t="todo">${esc(this._hass.states[this._todoTarget()]?.attributes?.friendly_name || "Home Assistant")}</button></div>` : ""}
           <div class="shop-head"><span>${n} von ${total} ausgewählt</span><span><button class="linkish" data-action="shop-all" data-on="1">Alle</button><button class="linkish" data-action="shop-all" data-on="0">Keine</button></span></div>
           <ul class="shop-list">${orderWithin(items.map((it) => ({ ...it, heading: !!it.group })), (e) => !e.on).map((it) => it.group ? `<li class="shop-group">${esc(it.group)}</li>`
             : `<li class="shop-item ${it.on ? "on" : ""}" data-action="shop-toggle" data-i="${it.idx}" role="checkbox" aria-checked="${it.on}" tabindex="0"><span class="box">${it.on ? `<ha-icon icon="mdi:check-bold"></ha-icon>` : ""}</span><span class="nm">${esc(it.name)}</span><span class="sp">${esc(it.spec)}</span></li>`).join("")}</ul>
           ${d.error ? `<p style="color:var(--kb-tomato);margin:10px 0 0">${esc(d.error)}</p>` : ""}
-          <div class="row"><button class="btn" data-action="shop-back"><ha-icon icon="mdi:arrow-left"></ha-icon>Zurück</button><button class="btn ${d.target === "bring" ? "bring" : "primary"}" data-action="shop-go" ${n && !d.busy ? "" : "disabled"}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird gesendet` : `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${label}`}</button></div>`;
+          <div class="row"><button class="btn" data-action="shop-back"><ha-icon icon="mdi:arrow-left"></ha-icon>Zurück</button><button class="btn primary" data-action="shop-go" ${n && !d.busy ? "" : "disabled"}>${d.busy ? `<span class="spin" style="width:18px;height:18px"></span>Wird gesendet` : `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${label}`}</button></div>`;
       }
     } else if (d.type === "restore") {
       inner = `<h2>Sicherung einspielen</h2><p>„${esc(d.file.name)}“ (${(d.file.size / 1048576).toFixed(1).replace(".", ",")} MB). Sollen die Rezepte zu den vorhandenen dazukommen oder das Kochbuch komplett ersetzen? Beim Ersetzen gehen alle Rezepte verloren, die nicht in der Sicherung sind.</p>
@@ -1924,7 +1924,7 @@ class KochbuchPanel extends HTMLElement {
     const go = this.shadowRoot.querySelector('[data-action="shop-go"]');
     if (go) {
       go.disabled = !n;
-      go.innerHTML = `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} ${d.target === "bring" ? "zu Bring! hinzufügen" : "auf die Einkaufsliste"}`;
+      go.innerHTML = `<ha-icon icon="mdi:cart-plus"></ha-icon>${n} ${n === 1 ? "Zutat" : "Zutaten"} zur Einkaufsliste hinzufügen`;
     }
   }
 
@@ -1959,7 +1959,7 @@ class KochbuchPanel extends HTMLElement {
           const [name, ...rest] = i.name.split(/,\s*/);
           return { name: name.trim() || i.name, spec: [i.spec, rest.join(", ")].filter(Boolean).join(", ") };
         }) });
-        where = `Bring!${res.list_name ? ` („${res.list_name}“)` : ""}`;
+        where = res.list_name ? `die Einkaufsliste „${res.list_name}“` : "die Einkaufsliste";
       } else {
         const entity = this._todoTarget();
         for (const i of items) await this._hass.callService("todo", "add_item", { item: i.spec ? `${i.name} (${i.spec})` : i.name }, { entity_id: entity });

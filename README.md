@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.8.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.8.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -13,7 +13,7 @@ Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in de
 - **Kategorien verwalten** in den Einstellungen: Haupt- und Unterkategorien hinzufügen, umbenennen, Farbe und Symbol wählen, Reihenfolge ändern, löschen (Rezepte einer gelöschten Kategorie werden in eine andere verschoben)
 - **Rezeptlisten pro Kategorie** mit Suche (auch nach Zutaten) und Sortierung; oben führt „Kochbuch“ jederzeit zurück zur Startseite
 - **Portionen umrechnen** – alle Mengen passen sich automatisch an (inkl. ½, ¼ …)
-- **Bring!-Anbindung**: in den Einstellungen mit dem Bring!-Konto anmelden und die Liste wählen; im Rezept „Zu Bring! hinzufügen“ fragt zuerst nach der Personenzahl, rechnet die Mengen um und zeigt alle Zutaten; ihr wählt ab, was daheim ist, der Rest landet in Bring!
+- **Bring!-Anbindung**: in den Einstellungen mit dem Bring!-Konto anmelden und die Liste wählen; im Rezept „Zur Einkaufsliste hinzufügen“ fragt zuerst nach der Personenzahl, rechnet die Mengen um und zeigt alle Zutaten; ihr wählt ab, was daheim ist, der Rest landet in Bring!
 - **Einkaufsliste in Home Assistant** (To-do-Liste) als Alternative oder zusätzlich
 - **Zubereitung in zwei Teilen**: Vorbereitung (schneiden, abwiegen …) und Kochen, jeweils mit eigener Zeit
 - **Kochmodus**: ein Schritt pro Bildschirm in großer Schrift, Bildschirm bleibt an, Zutaten daneben
@@ -64,6 +64,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.8.1 | Im Rezept heißt der Knopf jetzt „Zur Einkaufsliste hinzufügen“ (statt „Zu Bring! hinzufügen“); Dialog-Knöpfe passen aufs Handy |
 | 1.8.0 | Neue Unterkategorie „Soßen“ unter Hauptgericht (wird bei bestehenden Installationen einmalig ergänzt) |
 | 1.7.5 | Einstellungen: Sicherung und automatisches Backup in einem Bereich zusammengefasst |
 | 1.7.4 | Startseite: Kacheln zeigen nur noch die Hauptkategorie, ohne Liste der Unterkategorien |
