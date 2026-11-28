@@ -1,7 +1,7 @@
 /* Kochbuch – Panel für Home Assistant
  * https://github.com/domiundergroun/Kochrezepte
  */
-const KB_VERSION = "1.9.0";
+const KB_VERSION = "1.9.1";
 
 /* ------------------------------------------------------------------ Hilfen */
 const esc = (v) =>
@@ -341,6 +341,12 @@ main { max-width: 1280px; margin: 0 auto; padding: 4px 20px 80px; }
 .crumbs .here { display: inline-flex; align-items: center; padding: 0 8px; color: var(--kb-ink-soft); font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .crumbs .here .title-dot { width: 10px; height: 10px; margin-right: 8px; vertical-align: 0; flex: none; }
 .cat-title { font-size: clamp(34px, 5vw, 52px); font-weight: 800; margin: 18px 0 0; padding-bottom: 10px; border-bottom: 4px solid var(--c); display: inline-block; }
+
+.parent-link { display: none; width: max-content; align-items: center; gap: 6px; margin-top: 16px; padding: 4px 10px 4px 6px; border: 0; border-radius: 999px; background: transparent; color: var(--kb-ink-soft); font-weight: 700; font-size: 16px; }
+.parent-link:hover { background: var(--kb-herb-soft); color: var(--kb-ink); }
+.parent-link ha-icon { --mdc-icon-size: 18px; }
+.parent-link .pl-sep { color: var(--kb-ink-soft); }
+.parent-link + .cat-title { margin-top: 2px; }
 
 /* Startseite */
 .title-dot { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 10px; vertical-align: 2px; }
@@ -819,6 +825,7 @@ code { background: var(--kb-paper); padding: 1px 5px; border-radius: 5px; font-s
   .sub-tile b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sub-tile small { font-size: 12.5px; }
   .sub-tile .go { display: none; }
+  .parent-link { display: flex; }
   .crumbs button { font-size: 18px; padding: 0 8px; }
   .top.top-detail { gap: 2px; }
   .top.top-detail .crumbs button span, .top.top-detail [data-action=print] { display: none; }
@@ -1163,10 +1170,7 @@ class KochbuchPanel extends HTMLElement {
     const here = fav
       ? `${sep}<span class="here"><ha-icon class="crumb-icon" icon="mdi:heart" style="color:var(--kb-tomato)"></ha-icon>Favoriten</span>`
       : `${sep}<span class="here">${c ? `<ha-icon class="crumb-icon" icon="${esc(c.icon)}" style="color:${esc(c.color)}"></ha-icon>` : ""}${esc(this._filterName(this.filter))}</span>`;
-    // In Unterkategorien nur die aktuelle Kategorie zeigen; der Pfeil führt eine Ebene zurück
-    const backTo = fav ? c : parent;
-    const backBtn = backTo ? `<button class="icon-btn back-btn" data-action="cat" data-id="${esc(backTo.id)}" title="Zurück zu ${esc(backTo.name)}" aria-label="Zurück zu ${esc(backTo.name)}"><ha-icon icon="mdi:arrow-left"></ha-icon></button>` : "";
-    const crumbs = backBtn + this._crumbs(`${fav ? crumbCat(c) : ""}${here}`);
+    const crumbs = this._crumbs(`${parent ? crumbCat(parent) : ""}${fav ? crumbCat(c) : ""}${here}`);
     const fam = c ? this._family(c.id) : new Set();
     const subs = c && !parent && !fav ? this._subs(c.id) : [];
     const favTile = "";
@@ -1181,9 +1185,10 @@ class KochbuchPanel extends HTMLElement {
       <button class="btn primary" data-action="new"><ha-icon icon="mdi:plus"></ha-icon><span class="lbl">Neues Rezept</span></button>
       <button class="icon-btn" data-action="settings" title="Einstellungen" aria-label="Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`);
     const empty = !this._filtered().length && !this.search.trim();
+    const parentLine = parent && !fav ? `<button class="parent-link" data-action="cat" data-id="${esc(parent.id)}"><ha-icon icon="${esc(parent.icon)}" style="color:${esc(parent.color)}"></ha-icon>${esc(parent.name)}<ha-icon class="pl-sep" icon="mdi:chevron-right"></ha-icon></button>` : "";
     const title = fav
       ? `<h1 class="cat-title" style="--c:var(--kb-tomato)"><span class="cat-badge"><ha-icon icon="mdi:heart"></ha-icon></span>Favoriten</h1><p class="cat-sub">aus ${esc(c.name)}</p>`
-      : `<h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${c ? `<span class="cat-badge"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>` : ""}${esc(this._filterName(this.filter))}</h1>`;
+      : `${parentLine}<h1 class="cat-title" style="--c:${esc(c ? c.color : "var(--kb-ink)")}">${c ? `<span class="cat-badge"><ha-icon icon="${esc(c.icon)}"></ha-icon></span>` : ""}${esc(this._filterName(this.filter))}</h1>`;
     return `${header}<main>
       ${title}
       ${subTiles}
@@ -1252,7 +1257,7 @@ class KochbuchPanel extends HTMLElement {
     const cookedN = (r.cooked || []).length;
 
     const header = this._top("top-detail", `
-      ${this._crumbs([c].filter(Boolean).map((x) => `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(x.id)}"><ha-icon class="crumb-icon" icon="${esc(x.icon)}" style="color:${esc(x.color)}"></ha-icon>${esc(x.name)}</button>`).join(""))}
+      ${this._crumbs([this._parentOf(c), c].filter(Boolean).map((x) => `<span class="sep"><ha-icon icon="mdi:chevron-right"></ha-icon></span><button class="crumb-cat" data-action="cat" data-id="${esc(x.id)}"><ha-icon class="crumb-icon" icon="${esc(x.icon)}" style="color:${esc(x.color)}"></ha-icon>${esc(x.name)}</button>`).join(""))}
       <div class="spacer"></div>
       <button class="icon-btn" data-action="fav" data-id="${esc(r.id)}" aria-label="Favorit" style="color:${r.favorite ? "var(--kb-tomato)" : "inherit"}"><ha-icon icon="${r.favorite ? "mdi:heart" : "mdi:heart-outline"}"></ha-icon></button>
       <button class="icon-btn" data-action="export-recipe" data-id="${esc(r.id)}" aria-label="Rezept exportieren" title="Rezept exportieren"><ha-icon icon="mdi:export-variant"></ha-icon></button>
@@ -1289,7 +1294,7 @@ class KochbuchPanel extends HTMLElement {
       <section class="hero" style="--c:${esc(color)}">
         <div class="pic">${this._pic(r, c)}</div><div class="shade"></div>
         <div class="title">
-          ${c ? `<span class="cat"><ha-icon icon="${esc(c.icon)}"></ha-icon>${esc(c.name)}</span>` : ""}
+          ${c ? `<span class="cat"><ha-icon icon="${esc(c.icon)}"></ha-icon>${esc(this._catLabel(c))}</span>` : ""}
           <h1>${esc(r.title)}</h1>
           ${r.author ? `<div class="by">von ${esc(r.author)}</div>` : ""}
         </div>

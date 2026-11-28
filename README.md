@@ -2,7 +2,7 @@
 
 Euer gemeinsames Rezeptbuch direkt in Home Assistant – mit eigener Seite in der Seitenleiste, Kochmodus fürs Küchentablet und Einkaufsliste per Knopfdruck.
 
-![Version](https://img.shields.io/badge/Version-1.9.0-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
+![Version](https://img.shields.io/badge/Version-1.9.1-2F5D50) ![HACS](https://img.shields.io/badge/HACS-Custom-F2B134)
 
 ## Was es kann
 
@@ -65,6 +65,7 @@ anzahl: 4          # bei favoriten/neu
 
 | Version | Änderungen |
 |---|---|
+| 1.9.1 | In Unterkategorien steht die Oberkategorie wieder oben (z. B. Hauptgericht › Reis), antippbar |
 | 1.9.0 | Einstellungen › Einkaufsliste: Ziel wählbar (Unsere Einkaufsliste, Bring! direkt, andere To-do-Liste); Verbindung zur Einkaufsliste-App mit grünem Lämpchen |
 | 1.8.1 | Im Rezept heißt der Knopf jetzt „Zur Einkaufsliste hinzufügen“ (statt „Zu Bring! hinzufügen“); Dialog-Knöpfe passen aufs Handy |
 | 1.8.0 | Neue Unterkategorie „Soßen“ unter Hauptgericht (wird bei bestehenden Installationen einmalig ergänzt) |
